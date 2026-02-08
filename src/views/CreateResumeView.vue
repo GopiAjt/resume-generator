@@ -55,7 +55,8 @@ const downloadPDF = () => {
     const doc = iframe.contentWindow?.document
     if (!doc) return
 
-    // Inject scaling and professional styles for the print context
+    // Table Margin Hack: Set @page margin to 0 to suppress browser HUD
+    // and use a repeating table header/footer to simulate margins
     const content = `
         <!DOCTYPE html>
         <html>
@@ -65,19 +66,27 @@ const downloadPDF = () => {
                 @page { size: A4; margin: 0; }
                 body { 
                     margin: 0; 
-                    padding: 0.5in; 
+                    padding: 0; 
                     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
                     background: white;
                     color: #1a202c;
                     line-height: 1.5;
                 }
+                table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+                .margin-header { height: 0.5in; }
+                .margin-footer { height: 0.5in; }
+                .content-cell { 
+                    padding: 0 0.5in; 
+                    vertical-align: top;
+                }
+                
                 h1 { font-size: 24pt; font-weight: 800; color: #1a365d; margin-bottom: 2pt; letter-spacing: -0.02em; }
                 p:first-of-type { font-size: 10.5pt; color: #4a5568; margin-bottom: 20pt; font-weight: 500; }
                 h2 { 
                     font-size: 13pt; font-weight: 700; text-transform: uppercase; color: #2b6cb0; 
                     border-bottom: 1.5px solid #e2e8f0; padding-bottom: 4pt; margin-top: 24pt; margin-bottom: 12pt; 
                 }
-                h3 { font-size: 11.5pt; font-weight: 700; color: #1a202c; margin-top: 14pt; margin-bottom: 4pt; }
+                h3 { font-size: 11.5pt; font-weight: 700; color: #1a202c; margin-top: 14pt; margin-bottom: 4pt; font-weight: bold; }
                 p, li { font-size: 10.5pt; color: #2d3748; margin-bottom: 6pt; }
                 ul { padding-left: 1.25rem; margin-bottom: 10pt; list-style-type: disc; }
                 li { margin-bottom: 5pt; }
@@ -87,7 +96,17 @@ const downloadPDF = () => {
             </style>
         </head>
         <body>
-            ${generatedResumeHtml.value}
+            <table>
+                <thead><tr><td><div class="margin-header"></div></td></tr></thead>
+                <tbody>
+                    <tr>
+                        <td class="content-cell">
+                            ${generatedResumeHtml.value}
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot><tr><td><div class="margin-footer"></div></td></tr></tfoot>
+            </table>
         </body>
         </html>
     `
