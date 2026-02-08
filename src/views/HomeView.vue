@@ -14,7 +14,7 @@
         </p>
 
         <div class="cta-group fade-in" style="animation-delay: 300ms">
-          <a href="#" class="btn btn-primary">Create My Resume</a>
+          <RouterLink to="/create-resume" class="btn btn-primary">Create My Resume</RouterLink>
           <a href="#" class="btn btn-secondary">View Templates</a>
         </div>
       </div>
