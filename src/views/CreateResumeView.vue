@@ -9,6 +9,7 @@ const jobDescription = ref('')
 const isGenerating = ref(false)
 const generatedResume = ref('')
 const generatedResumeHtml = ref('')
+const validationSummary = ref('')
 const errorMessage = ref('')
 const resumeContainer = ref<HTMLElement | null>(null)
 
@@ -19,11 +20,19 @@ const handleSubmit = async () => {
     errorMessage.value = ''
     generatedResume.value = ''
     generatedResumeHtml.value = ''
+    validationSummary.value = ''
 
     try {
-        const resume = await generateResume(jobDescription.value)
-        generatedResume.value = resume
-        generatedResumeHtml.value = marked(resume) as string
+        const response = await generateResume(jobDescription.value)
+
+        if (typeof response === 'string') {
+            generatedResume.value = response
+            generatedResumeHtml.value = marked(response) as string
+        } else {
+            generatedResume.value = response.resume_markdown
+            generatedResumeHtml.value = marked(response.resume_markdown) as string
+            validationSummary.value = response.validation_summary
+        }
     } catch (error: any) {
         console.error('Failed to generate resume:', error)
         errorMessage.value = error.message || 'Failed to generate resume. Please check your API key and try again.'
@@ -36,11 +45,17 @@ const downloadPDF = () => {
     if (!resumeContainer.value) return
 
     const opt = {
-        margin: 10,
+        margin: 0,
         filename: 'Gopi_Aajatarao_resume.pdf',
         image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            letterRendering: true,
+            windowWidth: 794 // Approx 210mm in pixels at 96dpi
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     }
 
     html2pdf().set(opt).from(resumeContainer.value).save()
@@ -86,14 +101,21 @@ const downloadPDF = () => {
             <div class="resume-paper" ref="resumeContainer">
                 <div class="resume-content" v-html="generatedResumeHtml"></div>
             </div>
+
+            <div class="validation-summary" v-if="validationSummary">
+                <h3>Optimization Report</h3>
+                <div class="summary-content">
+                    <pre>{{ validationSummary }}</pre>
+                </div>
+            </div>
         </div>
     </div>
 </template>
 
 <style scoped>
 .create-resume {
-    padding: var(--space-12) var(--space-4);
-    max-width: 100%;
+    padding: var(--space-8) var(--space-4);
+    max-width: 1200px;
     margin: 0 auto;
 }
 
@@ -109,13 +131,22 @@ const downloadPDF = () => {
     margin: 0 auto;
 }
 
-.input-section,
-.resume-preview {
+.input-section {
     background: var(--color-surface);
     padding: var(--space-8);
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-border);
     box-shadow: var(--shadow-lg);
+}
+
+.resume-preview {
+    background: var(--color-surface);
+    padding: var(--space-8);
+    border-radius: var(--radius-lg);
+    border: none;
+    box-shadow: var(--shadow-xl);
+    width: 100%;
+    overflow-x: auto;
 }
 
 .form-group {
@@ -172,7 +203,7 @@ button:disabled {
     background: var(--color-background);
     padding: var(--space-6);
     border-radius: var(--radius-md);
-    border: 1px solid var(--color-border);
+    /* border: 1px solid var(--color-border); Removed border for cleaner look */
     margin: var(--space-6) 0;
     overflow-x: auto;
 }
@@ -203,70 +234,128 @@ pre {
 
 .resume-paper {
     background: white;
-    color: #333;
-    padding: 40px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    color: #1a202c;
+    padding: 0.5in;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
     margin: 0 auto;
-    font-family: 'Georgia', serif;
-    line-height: 1.6;
+    width: 210mm;
+    /* A4 Width */
+    min-height: 297mm;
+    /* A4 Height */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    line-height: 1.5;
+    text-align: left;
+    box-sizing: border-box;
 }
 
 .resume-content :deep(h1),
 .resume-content :deep(h2),
-.resume-content :deep(h3) {
-    color: #2c3e50;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 10px;
-    margin-top: 20px;
-    margin-bottom: 15px;
+.resume-content :deep(h3),
+.resume-content :deep(li) {
+    page-break-inside: avoid;
+    break-inside: avoid;
 }
 
 .resume-content :deep(h1) {
-    text-align: center;
-    border-bottom: none;
-    font-size: 2.5em;
-    margin-bottom: 5px;
+    font-size: 24pt;
+    /* Prominent Name */
+    font-weight: 800;
+    color: #1a365d;
+    /* Deep Navy accent */
+    margin-bottom: 2pt;
+    text-align: left;
+    border: none;
+    letter-spacing: -0.02em;
 }
 
-.resume-content :deep(p) {
-    margin-bottom: 10px;
+/* Contact info line */
+.resume-content :deep(p:first-of-type) {
+    font-size: 10.5pt;
+    color: #4a5568;
+    /* Subtle gray for contact info */
+    margin-bottom: 20pt;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+.resume-content :deep(h2) {
+    font-size: 13pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #2b6cb0;
+    /* Professional blue section headers */
+    border-bottom: 1.5px solid #e2e8f0;
+    /* Accent line */
+    padding-bottom: 4pt;
+    margin-top: 24pt;
+    margin-bottom: 12pt;
+    letter-spacing: 0.05em;
+}
+
+.resume-content :deep(h3) {
+    font-size: 11.5pt;
+    font-weight: 700;
+    color: #1a202c;
+    margin-top: 14pt;
+    margin-bottom: 4pt;
+}
+
+.resume-content :deep(p),
+.resume-content :deep(li) {
+    font-size: 10.5pt;
+    color: #2d3748;
+    margin-bottom: 6pt;
 }
 
 .resume-content :deep(ul) {
-    padding-left: 20px;
-    margin-bottom: 15px;
+    padding-left: 1.25rem;
+    margin-bottom: 10pt;
+    list-style-type: none;
+    /* We'll use custom bullets if needed, but standard disc is fine */
 }
 
 .resume-content :deep(li) {
-    margin-bottom: 5px;
+    position: relative;
+    margin-bottom: 5pt;
+}
+
+.resume-content :deep(li::before) {
+    content: "•";
+    color: #2b6cb0;
+    font-weight: bold;
+    display: inline-block;
+    width: 1em;
+    margin-left: -1em;
 }
 
 .resume-content :deep(strong) {
-    font-weight: bold;
-    color: #000;
-}
-
-.resume-content :deep(table) {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 20px 0;
-}
-
-.resume-content :deep(th),
-.resume-content :deep(td) {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-}
-
-.resume-content :deep(th) {
-    background-color: #f2f2f2;
-    font-weight: bold;
+    font-weight: 600;
+    color: #1a202c;
 }
 
 .btn-secondary {
     background: transparent;
     border: 1px solid var(--color-border);
     color: var(--color-text);
+}
+
+.validation-summary {
+    margin-top: var(--space-8);
+    background: hsla(var(--hue-primary), 50%, 95%, 1);
+    border: 1px solid hsla(var(--hue-primary), 50%, 80%, 1);
+    border-radius: var(--radius-md);
+    padding: var(--space-6);
+}
+
+.validation-summary h3 {
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+}
+
+.summary-content pre {
+    background: transparent;
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    white-space: pre-wrap;
 }
 </style>

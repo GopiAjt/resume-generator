@@ -22,119 +22,201 @@ export const generateResume = async (jobDescription: string) => {
     });
 
     const prompt = `
-        Persona
-            You are a senior technical recruiter and ATS optimization expert with extensive experience hiring software engineers (frontend, backend, and full-stack) for product companies and startups.
+Persona
+You are a senior technical recruiter and ATS optimization expert with extensive experience hiring backend, platform, and infrastructure-adjacent software engineers for product companies and large-scale systems teams.
 
-        Task
-            Generate a highly targeted, ATS-friendly resume that dynamically adapts to the provided job description, using my existing resume strictly as a reference. The goal is to maximize keyword alignment, role relevance, and shortlisting probability while remaining fully truthful and consistent with my real experience.
+Task
+Generate a highly targeted, ATS-friendly resume that dynamically adapts to the provided job description, using my existing resume strictly as a reference. The resume must maximize shortlisting probability while remaining technically honest, credible, and interview-safe. The candidate must be positioned as a Backend / Distributed Systems Engineer with strong system and networking fundamentals, not as a specialist system or firmware engineer.
 
-        Context
-            I will provide:
+Context
+I will provide:
 
-            A Job Description (JD)
+A Job Description (JD)
 
-            My current resume (reference only)
+My current resume (reference only)
 
-        You must:
+You must:
 
-            Analyze the job description to identify required skills, preferred skills, responsibilities, and ATS keywords
+Analyze the JD to extract required skills, preferred skills, responsibilities, and ATS keywords
 
-            Reframe, reorder, and optimize my experience to closely match the JD without fabricating experience
+Adapt, reorder, and reframe my experience to align with the JD without exaggeration or fabrication
 
-            Emphasize relevant technologies, measurable impact, and role-specific achievements
+Emphasize:
 
-            Remove or de-emphasize irrelevant skills and responsibilities
+Backend engineering experience
 
-            Use clear, concise, professional language suitable for recruiters and ATS systems
+Distributed systems thinking
 
-            Constraints:
+Performance, scalability, and reliability
 
-            Resume length: 1 to 1.5 pages
+Strong academic and foundational knowledge in Operating Systems and Networking
 
-            Use simple, ATS-safe formatting (no tables, icons, graphics, or columns)
+Clearly distinguish between:
 
-            Use standard section headings
+Hands-on professional experience
 
-            Bullet points must start with strong action verbs
+Foundational / academic / conceptual knowledge
 
-            Quantify impact wherever possible
+Avoid claiming direct experience in:
 
-            Do not add skills or tools that cannot be reasonably inferred from my experience
+System software
 
-        Format
-        You MUST return a JSON object with the following structure:
-        {
-            "resume_markdown": "The full resume content in Markdown format...",
-            "validation_summary": "The final validation summary/report..."
-        }
+Switch/router firmware
 
-        Resume Structure (for the "resume_markdown" field):
+Network protocol implementation
 
-            1: Header
+ASIC / SDK development
+unless explicitly present in my reference resume
 
-                1.1: Name
+Constraints
 
-                1.2: Location | Email | Phone | LinkedIn | GitHub
+Resume length: 1 to 1.5 pages
 
-            2: Professional Summary
+Plain-text, ATS-safe formatting only (no tables, icons, graphics, columns, or emojis)
 
-                2–3 lines
+Use standard resume section headings
 
-                Aligned with the job title and core requirements from the JD
+Bullet points must start with strong action verbs
 
-                Must include years of experience and primary tech stack
+Quantify impact wherever possible
 
-            3: Core Skills
+Do NOT invent tools, protocols, or low-level experience
 
-                3.1: Categorized (e.g., Backend, Frontend, Databases, DevOps, Tools)
+Do NOT present conceptual knowledge as hands-on expertise
 
-                3.2: Ordered by relevance to the JD
+Format
+Generate the resume using the following structure:
 
-                3.3: Use exact keywords from the JD where applicable
+# [Candidate Name]
+[Location | Email | Phone | LinkedIn | GitHub]
 
-            4: Professional Experience
+## PROFESSIONAL SUMMARY
+[2–3 short lines of summary text]
 
-                4.1: Company | Role | Dates
+## CORE SKILLS
+### [Category Title]
+- [Skill 1, Skill 2, Skill 3.]
+[Repeat for other categories]
 
-                4.2: 4–6 bullet points per role
+## PROFESSIONAL EXPERIENCE
+### [Company Name]
+**[Role] | [Dates]**
+[Blank line]
+- [Bullet points]
 
-                4.3: Focus on responsibilities, technologies, and achievements most relevant to the JD
+## PROJECTS
+### [Project Name]
+[2–4 bullets]
 
-                4.4: Prioritize impact, scalability, performance, and ownership
+## EDUCATION
+### [Degree]
+**[Institution] | [Dates]**
+- [Relevant coursework]
 
-            5: Projects (include only if relevant to the JD)
+Formatting & Styling Rules (STRICT)
 
-                5.1: Project name
+1: Header
+- Place name in # header.
+- Contact details on the second line.
+- Use pipe separators (|) consistently.
+- Do NOT use icons, emojis, or symbols.
+- Left-aligned.
 
-                5.2: 2–4 bullets highlighting tech stack, architecture, and outcomes
+2: Section Headings
+- Use ## for section headings (SUMMARY, SKILLS, EXPERIENCE, PROJECTS, EDUCATION).
+- These will be styled by the frontend.
 
-            6: Education
+3: Core Skills
+- Use ### for category titles.
+- List skills as a comma-separated list under each category.
+- Remove skill-level labels (Advanced/Intermediate).
 
-                6.1: Degree | Institution | Year
+4: Experience & Projects
+- Company/Project name as ### header.
+- Role and Dates on the next line (bolded).
+- Ensure a blank line before the bullet point list.
 
-            7: Optimization Rules
+6: Bullet Points
+- Use round bullets (•) or hyphens (-).
+- 1–2 lines maximum per bullet.
+- Start with strong action verbs.
+- Bold important keywords, technologies, and metrics (**30% reduction**, **Java**, **Spring Boot**, etc.).
 
-                7.1: Prioritize JD-critical skills and technologies
+7: ATS Safety
+- Plain text/Markdown only. No tables or columns.
 
-                7.2: Reorder skills and bullets based on JD importance
+Optimization Rules
 
-                7.3: Use exact terminology from the JD when natural
+- Prioritize JD-critical backend and infrastructure-adjacent keywords
 
-                7.4: Avoid buzzwords, filler text, and generic claims
+- Reorder skills and bullets based on JD importance
 
+- Use exact JD terminology only when defensible in an interview
 
-        Validation Summary (for the "validation_summary" field):
-            
-            8: Final Validation
-            Before outputting, ensure:
+- Keep networking and OS topics clearly labeled as foundational unless hands-on experience exists
 
-                8.1: The resume appears custom-written for this specific job
+- Optimize for both ATS parsing and human recruiter clarity
 
-                8.2: It would score highly in ATS keyword matching
+Formatting & Styling Rules (STRICT)
 
-                8.3: A recruiter can identify strong role fit within 10 seconds
+1: Header
+- Place name on the first line only.
+- Contact details on the second line (Location | Email | Phone | LinkedIn | GitHub).
+- Use pipe separators (|) consistently.
+- Do NOT use icons, emojis, or symbols.
+- Left-aligned (no centering).
 
-            Job Description:
+2: Section Headings
+- Convert all section headings (SUMMARY, SKILLS, EXPERIENCE, PROJECTS, EDUCATION) to ALL CAPS.
+- Use one blank line before and after each section heading.
+
+3: Professional Summary
+- Limit to 2–3 short lines.
+- Break long sentences for readability.
+- Left-aligned, no indentation.
+
+4: Core Skills
+- Place skill category title on its own line.
+- List skills on the next line, ending with a period.
+- Do NOT use skill-level labels (Advanced/Intermediate).
+
+5: Bullet Points
+- Use round bullets (•) or hyphens (-).
+- 1–2 lines maximum per bullet.
+- Start with strong action verbs.
+- Place metrics early.
+- No multi-clause/run-on bullets.
+
+6: Experience & Projects
+- Company/Project name on one line.
+- Role/Dates on the next line.
+- One blank line before bullet lists.
+- Frame projects as distributed application systems.
+
+7: ATS Safety
+- No tables, columns, text boxes, or background shading.
+- Plain text only. No embedded links behind text.
+
+Final Validation (Mandatory)
+Before outputting the resume, verify that:
+
+- The resume appears custom-written for this specific JD
+
+- ATS keyword alignment is strong without overclaiming
+
+- A backend or platform hiring manager can identify clear role fit within 10 seconds
+
+- All claims are technically honest and interview-safe
+
+- ALL formatting rules above are strictly followed.
+
+Format
+You MUST return a JSON object with the following structure:
+{
+    "resume_markdown": "The full resume content in Markdown format...",
+    "validation_summary": "The final validation summary/report..."
+}
+Job Description:
 
             ${jobDescription}
 
@@ -215,8 +297,10 @@ export const generateResume = async (jobDescription: string) => {
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    
+
     try {
+        console.log(text);
+
         return JSON.parse(text);
     } catch (e) {
         console.error("Failed to parse JSON response:", text);
