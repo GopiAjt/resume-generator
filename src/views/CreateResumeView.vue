@@ -2,9 +2,7 @@
 import { ref } from 'vue'
 import { generateResume } from '@/services/gemini'
 import { marked } from 'marked'
-// @ts-ignore
-import html2pdf from 'html2pdf.js'
-
+// Removed html2pdf.js in favor of browser-native printing for better ATS compatibility
 const jobDescription = ref('')
 const isGenerating = ref(false)
 const generatedResume = ref('')
@@ -42,23 +40,102 @@ const handleSubmit = async () => {
 }
 
 const downloadPDF = () => {
-    if (!resumeContainer.value) return
+    if (!generatedResumeHtml.value) return
 
-    const opt = {
-        margin: 0,
-        filename: 'Gopi_Aajatarao_resume.pdf',
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: {
-            scale: 2,
-            useCORS: true,
-            letterRendering: true,
-            windowWidth: 794 // Approx 210mm in pixels at 96dpi
-        },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    }
+    // Create a hidden iframe
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = 'none'
+    document.body.appendChild(iframe)
 
-    html2pdf().set(opt).from(resumeContainer.value).save()
+    const doc = iframe.contentWindow?.document
+    if (!doc) return
+
+    // Inject scaling and professional styles for the print context
+    const content = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <style>
+                @page { size: A4; margin: 0; }
+                body { 
+                    margin: 0; 
+                    padding: 0.5in; 
+                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+                    background: white;
+                    color: #1a202c;
+                    line-height: 1.5;
+                }
+                h1 { font-size: 24pt; font-weight: 800; color: #1a365d; margin-bottom: 2pt; letter-spacing: -0.02em; }
+                p:first-of-type { font-size: 10.5pt; color: #4a5568; margin-bottom: 20pt; font-weight: 500; }
+                h2 { 
+                    font-size: 13pt; font-weight: 700; text-transform: uppercase; color: #2b6cb0; 
+                    border-bottom: 1.5px solid #e2e8f0; padding-bottom: 4pt; margin-top: 24pt; margin-bottom: 12pt; 
+                }
+                h3 { font-size: 11.5pt; font-weight: 700; color: #1a202c; margin-top: 14pt; margin-bottom: 4pt; }
+                p, li { font-size: 10.5pt; color: #2d3748; margin-bottom: 6pt; }
+                ul { padding-left: 1.25rem; margin-bottom: 10pt; list-style-type: disc; }
+                li { margin-bottom: 5pt; }
+                strong { font-weight: 600; color: #1a202c; }
+                * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                h1, h2, h3, li { page-break-inside: avoid; break-inside: avoid; }
+            </style>
+        </head>
+        <body>
+            ${generatedResumeHtml.value}
+        </body>
+        </html>
+    `
+
+    doc.open()
+    doc.write(content)
+    doc.close()
+
+    // Small delay to ensure styles are applied before printing
+    setTimeout(() => {
+        iframe.contentWindow?.focus()
+        iframe.contentWindow?.print()
+        setTimeout(() => {
+            document.body.removeChild(iframe)
+        }, 1000)
+    }, 500)
+}
+
+const downloadDOC = () => {
+    if (!generatedResumeHtml.value) return
+
+    const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
+        "xmlns:w='urn:schemas-microsoft-com:office:word' " +
+        "xmlns='http://www.w3.org/TR/REC-html40'>" +
+        "<head><meta charset='utf-8'><title>Resume</title><style>" +
+        "body { font-family: 'Arial', sans-serif; margin: 0.5in; }" +
+        "h1 { font-size: 24pt; color: #1a365d; margin-bottom: 2pt; }" +
+        "h2 { font-size: 13pt; color: #2b6cb0; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; margin-top: 24pt; padding-bottom: 4pt; }" +
+        "h3 { font-size: 11.5pt; color: #1a202c; margin-top: 14pt; margin-bottom: 4pt; font-weight: bold; }" +
+        "p, li { font-size: 10.5pt; color: #2d3748; margin-bottom: 6pt; }" +
+        "ul { list-style-type: disc; margin-left: 20px; }" +
+        "strong { font-weight: bold; }" +
+        "</style></head><body>";
+    const footer = "</body></html>";
+    const sourceHTML = header + generatedResumeHtml.value + footer;
+
+    const blob = new Blob(['\ufeff', sourceHTML], {
+        type: 'application/msword'
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Gopi_Aajatarao_resume.doc';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 }
 </script>
 
@@ -94,6 +171,7 @@ const downloadPDF = () => {
                 <h2>Generated Resume</h2>
                 <div class="preview-actions">
                     <button @click="downloadPDF" class="btn btn-primary">Download PDF</button>
+                    <button @click="downloadDOC" class="btn btn-secondary">Download DOC</button>
                     <button @click="generatedResume = ''" class="btn btn-secondary">Create Another</button>
                 </div>
             </div>

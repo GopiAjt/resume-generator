@@ -225,8 +225,8 @@ Job Description:
             [
                 Gopi Ajatarao
                 Bengaluru, India
-                gopiajt23@gmail.com | 📞 +91 90088 30298
-                LinkedIn: www.linkedin.com/in/gopi-ajt | GitHub: www.github.com/GopiAjt
+                gopi.ajatarao@gmail.com | 📞 +91 90088 30298
+                LinkedIn: linkedin.com/in/gopi-ajt | GitHub: github.com/GopiAjt
                 ________________________________________
                 Professional Summary:
                 Full Stack Developer with 2+ years of experience designing and developing high-performance, responsive web applications using Vue.js, Spring Boot, and MySQL. Skilled in building scalable backend systems, integrating RESTful APIs, and crafting dynamic frontends for seamless user experiences. Experienced in Docker-based deployments, database optimization, and Agile development. Passionate about delivering clean, maintainable, and efficient code that drives business impact.
