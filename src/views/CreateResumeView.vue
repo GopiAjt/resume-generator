@@ -91,6 +91,8 @@ const downloadPDF = () => {
                 ul { padding-left: 1.25rem; margin-bottom: 10pt; list-style-type: disc; }
                 li { margin-bottom: 5pt; }
                 strong { font-weight: 600; color: #1a202c; }
+                a { color: #2b6cb0; text-decoration: none; }
+                a:hover { text-decoration: underline; }
                 * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                 h1, h2, h3, li { page-break-inside: avoid; break-inside: avoid; }
             </style>
@@ -139,6 +141,7 @@ const downloadDOC = () => {
         "p, li { font-size: 10.5pt; color: #2d3748; margin-bottom: 6pt; }" +
         "ul { list-style-type: disc; margin-left: 20px; }" +
         "strong { font-weight: bold; }" +
+        "a { color: #2b6cb0; text-decoration: none; }" +
         "</style></head><body>";
     const footer = "</body></html>";
     const sourceHTML = header + generatedResumeHtml.value + footer;

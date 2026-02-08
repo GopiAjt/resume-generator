@@ -13,10 +13,10 @@ import { RouterLink, RouterView } from 'vue-router'
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
       </nav>
-      
-      <div class="actions">
+
+      <!-- <div class="actions">
         <a href="#" class="btn btn-primary">Get Started</a>
-      </div>
+      </div> -->
     </div>
   </header>
 
@@ -27,7 +27,7 @@ import { RouterLink, RouterView } from 'vue-router'
       </transition>
     </RouterView>
   </main>
-  
+
   <footer>
     <div class="container">
       <p>&copy; 2024 Resume Generator. All rights reserved.</p>
@@ -80,7 +80,8 @@ nav a {
   transition: color var(--transition-fast);
 }
 
-nav a:hover, nav a.router-link-active {
+nav a:hover,
+nav a.router-link-active {
   color: var(--color-primary);
 }
 

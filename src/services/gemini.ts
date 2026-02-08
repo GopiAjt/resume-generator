@@ -88,7 +88,7 @@ Format
 Generate the resume using the following structure:
 
 # [Candidate Name]
-[Location | Email | Phone | LinkedIn | GitHub]
+[Location | Email | Phone | [LinkedIn Link](URL) | [GitHub Link](URL)]
 
 ## PROFESSIONAL SUMMARY
 [2–3 short lines of summary text]
