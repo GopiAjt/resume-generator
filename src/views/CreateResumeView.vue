@@ -10,6 +10,18 @@ const generatedResumeHtml = ref('')
 const validationSummary = ref('')
 const errorMessage = ref('')
 const resumeContainer = ref<HTMLElement | null>(null)
+const toast = ref({
+    show: false,
+    message: '',
+    type: 'error'
+})
+
+const showToast = (message: string, type = 'error') => {
+    toast.value = { show: true, message, type }
+    setTimeout(() => {
+        toast.value.show = false
+    }, 5000)
+}
 
 const handleSubmit = async () => {
     if (!jobDescription.value.trim()) return
@@ -33,7 +45,12 @@ const handleSubmit = async () => {
         }
     } catch (error: any) {
         console.error('Failed to generate resume:', error)
-        errorMessage.value = error.message || 'Failed to generate resume. Please check your API key and try again.'
+        const msg = error.message || ''
+        if (msg.includes('503') || msg.toLowerCase().includes('high demand')) {
+            showToast('Gemini is currently under high demand. Please wait a few moments and try again!', 'warning')
+        } else {
+            errorMessage.value = msg || 'Failed to generate resume. Please check your API key and try again.'
+        }
     } finally {
         isGenerating.value = false
     }
@@ -163,6 +180,18 @@ const downloadDOC = () => {
 
 <template>
     <div class="create-resume container fade-in">
+        <!-- Toast Notification -->
+        <Transition name="toast">
+            <div v-if="toast.show" class="toast-notification" :class="toast.type">
+                <div class="toast-content">
+                    <span v-if="toast.type === 'warning'" class="toast-icon">⚠️</span>
+                    <span v-else class="toast-icon">❌</span>
+                    <p>{{ toast.message }}</p>
+                </div>
+                <button @click="toast.show = false" class="toast-close">&times;</button>
+            </div>
+        </Transition>
+
         <div class="header-section">
             <h1 class="text-display">Target Your Resume</h1>
             <p class="subtitle">Paste the job description below to tailor your resume for this specific role.</p>
@@ -300,6 +329,8 @@ button:disabled {
 }
 
 .resume-content {
+    display: flex;
+    flex-direction: column;
     background: var(--color-background);
     padding: var(--space-6);
     border-radius: var(--radius-md);
@@ -334,6 +365,13 @@ pre {
 
 .resume-paper {
     background: white;
+    /* Visual Page Separation: Subtle horizontal line every 297mm (A4 height) */
+    background-image: repeating-linear-gradient(to bottom,
+            transparent,
+            transparent calc(297mm - 1px),
+            #e2e8f0 calc(297mm - 1px),
+            #e2e8f0 297mm);
+    background-size: 100% 297mm;
     color: #1a202c;
     padding: 0.5in;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
@@ -346,6 +384,79 @@ pre {
     line-height: 1.5;
     text-align: left;
     box-sizing: border-box;
+    transition: width var(--transition-base), padding var(--transition-base);
+    position: relative;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .create-resume {
+        padding: var(--space-4);
+    }
+
+    .subtitle {
+        font-size: 1rem;
+    }
+
+    .input-section,
+    .resume-preview {
+        padding: var(--space-4);
+    }
+
+    textarea {
+        font-size: 16px;
+        /* Prevents auto-zoom on iOS */
+    }
+
+    .preview-header {
+        flex-direction: column;
+        gap: var(--space-4);
+        text-align: center;
+    }
+
+    .preview-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .preview-actions {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .resume-paper {
+        width: 100%;
+        min-height: auto;
+        padding: var(--space-6);
+        /* Reduced padding for mobile */
+    }
+
+    .resume-content :deep(h1) {
+        font-size: 18pt;
+    }
+
+    .resume-content :deep(h2) {
+        font-size: 11.5pt;
+        margin-top: 18pt;
+    }
+
+    .resume-content :deep(h3) {
+        font-size: 10.5pt;
+        margin-top: 12pt;
+    }
+
+    .resume-content :deep(p),
+    .resume-content :deep(li),
+    .resume-content :deep(p:first-of-type) {
+        font-size: 9.5pt;
+        margin-bottom: 4pt;
+    }
+}
+
+@media (max-width: 480px) {
+    .preview-actions button {
+        width: 100%;
+    }
 }
 
 .resume-content :deep(h1),
@@ -398,6 +509,17 @@ pre {
     color: #1a202c;
     margin-top: 14pt;
     margin-bottom: 4pt;
+    font-weight: bold;
+}
+
+/* Clickable Links styling */
+.resume-content :deep(a) {
+    color: #2b6cb0;
+    text-decoration: none;
+}
+
+.resume-content :deep(a:hover) {
+    text-decoration: underline;
 }
 
 .resume-content :deep(p),
@@ -457,5 +579,86 @@ pre {
     color: var(--color-text);
     font-family: var(--font-family-base);
     white-space: pre-wrap;
+}
+
+/* Toast Notification */
+.toast-notification {
+    position: fixed;
+    top: var(--space-6);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 320px;
+    max-width: 500px;
+    padding: var(--space-4) var(--space-6);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    animation: slide-down var(--transition-base);
+}
+
+.toast-notification.error {
+    border-left: 4px solid var(--color-danger);
+}
+
+.toast-notification.warning {
+    border-left: 4px solid #f59e0b;
+    /* Amber 500 */
+}
+
+.toast-content {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.toast-icon {
+    font-size: 1.25rem;
+}
+
+.toast-content p {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-heading);
+}
+
+.toast-close {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    margin-left: var(--space-4);
+    line-height: 1;
+}
+
+/* Animations */
+.toast-enter-active,
+.toast-leave-active {
+    transition: all 0.3s ease;
+}
+
+.toast-enter-from,
+.toast-leave-to {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+}
+
+@keyframes slide-down {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
 }
 </style>
