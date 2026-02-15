@@ -64,21 +64,23 @@ const downloadPDF = () => {
     iframe.style.position = 'fixed'
     iframe.style.right = '0'
     iframe.style.bottom = '0'
-    iframe.style.width = '0'
-    iframe.style.height = '0'
+    iframe.style.width = '1024px' // Fixed width to force desktop layout during calculation
+    iframe.style.height = '1000px'
     iframe.style.border = 'none'
+    iframe.style.visibility = 'hidden'
     document.body.appendChild(iframe)
 
     const doc = iframe.contentWindow?.document
     if (!doc) return
 
     // Table Margin Hack: Set @page margin to 0 to suppress browser HUD
-    // and use a repeating table header/footer to simulate margins
+    // Viewport Hack: content="width=1024" forces mobile browsers to treat the print context as desktop
     const content = `
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="utf-8">
+            <meta name="viewport" content="width=1024">
             <style>
                 @page { size: A4; margin: 0; }
                 body { 
@@ -88,6 +90,7 @@ const downloadPDF = () => {
                     background: white;
                     color: #1a202c;
                     line-height: 1.5;
+                    width: 1024px; /* Matches viewport for consistent measure */
                 }
                 table { width: 100%; border-collapse: collapse; table-layout: fixed; }
                 .margin-header { height: 0.5in; }
