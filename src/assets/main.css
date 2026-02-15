@@ -104,14 +104,25 @@ p {
 
 /* Print Isolation Fail-safes */
 @media print {
-  header, 
-  footer, 
-  nav, 
-  .input-section, 
-  .preview-actions, 
+
+  header,
+  footer,
+  nav,
+  .navbar,
+  .header-section,
+  .preview-header,
+  .input-section,
+  .preview-actions,
   .toast-notification,
   .validation-summary,
   .btn {
+    display: none !important;
+  }
+
+  /* Aggressive backup: hide all headings except the ones in the resume */
+  h1:not(.resume-content h1),
+  h2:not(.resume-content h2),
+  h3:not(.resume-content h3) {
     display: none !important;
   }
 
