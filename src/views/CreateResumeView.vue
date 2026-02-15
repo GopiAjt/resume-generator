@@ -62,12 +62,13 @@ const downloadPDF = () => {
     // Create a hidden iframe
     const iframe = document.createElement('iframe')
     iframe.style.position = 'fixed'
-    iframe.style.right = '0'
-    iframe.style.bottom = '0'
+    iframe.style.left = '-9999px' // Position far off-screen
+    iframe.style.top = '0'
     iframe.style.width = '1024px' // Fixed width to force desktop layout during calculation
     iframe.style.height = '1000px'
     iframe.style.border = 'none'
-    iframe.style.visibility = 'hidden'
+    iframe.style.opacity = '0' // Hidden but not removed from layout flow for some print engines
+    iframe.style.zIndex = '-1'
     document.body.appendChild(iframe)
 
     const doc = iframe.contentWindow?.document
@@ -139,8 +140,10 @@ const downloadPDF = () => {
 
     // Small delay to ensure styles are applied before printing
     setTimeout(() => {
-        iframe.contentWindow?.focus()
-        iframe.contentWindow?.print()
+        if (iframe.contentWindow) {
+            iframe.contentWindow.focus()
+            iframe.contentWindow.print()
+        }
         setTimeout(() => {
             document.body.removeChild(iframe)
         }, 1000)

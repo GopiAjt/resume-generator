@@ -101,3 +101,22 @@ p {
   flex-direction: column;
   min-height: 100vh;
 }
+
+/* Print Isolation Fail-safes */
+@media print {
+  header, 
+  footer, 
+  nav, 
+  .input-section, 
+  .preview-actions, 
+  .toast-notification,
+  .validation-summary,
+  .btn {
+    display: none !important;
+  }
+
+  .container {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+}
