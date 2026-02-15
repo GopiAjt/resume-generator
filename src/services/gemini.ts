@@ -161,7 +161,8 @@ Formatting & Styling Rules (STRICT)
 
 1: Header
 - Place name on the first line only.
-- Contact details on the second line (Location | Email | Phone | LinkedIn | GitHub).
+- Contact details on the second line (Location | Email | Phone | [LinkedIn](URL) | [GitHub](URL)).
+- IMPORTANT: LinkedIn and GitHub MUST be clickable Markdown links: [Link Text](URL).
 - Use pipe separators (|) consistently.
 - Do NOT use icons, emojis, or symbols.
 - Left-aligned (no centering).
@@ -195,7 +196,7 @@ Formatting & Styling Rules (STRICT)
 
 7: ATS Safety
 - No tables, columns, text boxes, or background shading.
-- Plain text only. No embedded links behind text.
+- Use plain text for the body. Clickable Markdown links are ONLY allowed in the header for social profiles.
 
 Final Validation (Mandatory)
 Before outputting the resume, verify that:
