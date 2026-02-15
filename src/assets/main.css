@@ -113,11 +113,10 @@ p {
   .preview-header,
   .input-section,
   .preview-actions,
-  .resume-preview,
-  .resume-paper,
   .toast-notification,
   .validation-summary,
-  .btn {
+  .btn,
+  iframe {
     display: none !important;
   }
 
@@ -131,5 +130,20 @@ p {
   .container {
     padding: 0 !important;
     max-width: none !important;
+  }
+
+  /* Main Window Fallback Styles */
+  .resume-preview,
+  .resume-paper {
+    display: block !important;
+    visibility: visible !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    /* Removes page guides */
+    width: 100% !important;
+    max-width: none !important;
+    min-height: auto !important;
   }
 }
