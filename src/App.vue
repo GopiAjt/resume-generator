@@ -1,12 +1,20 @@
-<script setup lang="ts">
+<script lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
+
+export default {
+  methods: {
+    home_link() {
+      this.$router.push('/');
+    }
+  }
+};
 </script>
 
 <template>
   <header>
     <div class="container navbar">
       <div class="logo">
-        <span class="logo-text">ResumeGen</span>
+        <span class="logo-text" @click="home_link">ResumeGen</span>
       </div>
 
       <nav>
@@ -30,7 +38,7 @@ import { RouterLink, RouterView } from 'vue-router'
 
   <footer>
     <div class="container">
-      <p>&copy; 2024 Resume Generator. All rights reserved.</p>
+      <p style="font-size: smaller;">&copy; 2024 Resume Generator. All rights reserved.</p>
     </div>
   </footer>
 </template>
@@ -66,6 +74,7 @@ header {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  cursor: pointer;
 }
 
 nav {

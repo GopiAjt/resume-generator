@@ -4,6 +4,7 @@ import { generateResume } from '@/services/gemini'
 import { marked } from 'marked'
 // Removed html2pdf.js in favor of browser-native printing for better ATS compatibility
 const jobDescription = ref('')
+const companyName = ref('')
 const isGenerating = ref(false)
 const generatedResume = ref('')
 const generatedResumeHtml = ref('')
@@ -58,6 +59,11 @@ const handleSubmit = async () => {
 
 const downloadPDF = () => {
     if (!generatedResumeHtml.value) return
+
+    // Set document title temporarily to influence the default filename in the print dialog
+    const originalTitle = document.title
+    const companySuffix = companyName.value ? `_${companyName.value.replace(/\s+/g, '_')}` : ''
+    document.title = `Gopi_Aajatarao${companySuffix}_resume`
 
     // Create a hidden iframe
     const iframe = document.createElement('iframe')
@@ -146,12 +152,17 @@ const downloadPDF = () => {
         }
         setTimeout(() => {
             document.body.removeChild(iframe)
+            // Restore original title
+            document.title = originalTitle
         }, 1000)
     }, 500)
 }
 
 const downloadDOC = () => {
     if (!generatedResumeHtml.value) return
+
+    const companySuffix = companyName.value ? `_${companyName.value.replace(/\s+/g, '_')}` : ''
+    const fileName = `Gopi_Aajatarao${companySuffix}_resume.doc`
 
     const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
         "xmlns:w='urn:schemas-microsoft-com:office:word' " +
@@ -176,7 +187,7 @@ const downloadDOC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'Gopi_Aajatarao_resume.doc';
+    link.download = fileName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -204,6 +215,12 @@ const downloadDOC = () => {
         </div>
 
         <div class="input-section" v-if="!generatedResume">
+            <div class="form-group">
+                <label for="company-name">Company Name (Optional)</label>
+                <input id="company-name" v-model="companyName" type="text" placeholder="e.g. Google, Meta, etc."
+                    :disabled="isGenerating" class="company-input" />
+            </div>
+
             <div class="form-group">
                 <label for="job-description">Job Description</label>
                 <textarea id="job-description" v-model="jobDescription"
@@ -295,7 +312,8 @@ label {
     color: var(--color-heading);
 }
 
-textarea {
+textarea,
+.company-input {
     width: 100%;
     padding: var(--space-4);
     background: var(--color-background);
@@ -304,11 +322,15 @@ textarea {
     color: var(--color-text);
     font-family: var(--font-family-base);
     font-size: 1rem;
-    resize: vertical;
     transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-textarea:focus {
+textarea {
+    resize: vertical;
+}
+
+textarea:focus,
+.company-input:focus {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px hsla(var(--hue-primary), 80%, 60%, 0.1);
