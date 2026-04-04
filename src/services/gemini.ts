@@ -8,7 +8,7 @@ if (!API_KEY) {
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-export const generateResume = async (jobDescription: string) => {
+export const generateResume = async (jobDescription: string, userResume: string) => {
   if (!API_KEY) {
     throw new Error("API Key is missing. Please set VITE_GEMINI_API_KEY in .env.local");
   }
@@ -23,50 +23,37 @@ export const generateResume = async (jobDescription: string) => {
 
     const prompt = `
 Persona
-You are a senior technical recruiter and ATS optimization expert with extensive experience hiring backend, platform, and infrastructure-adjacent software engineers for product companies and large-scale systems teams.
+You are a senior technical recruiter and ATS optimization expert with extensive experience hiring software engineers for product companies and large-scale systems teams.
 
 Task
-Generate a highly targeted, ATS-friendly resume that dynamically adapts to the provided job description, using my existing resume strictly as a reference. The resume must maximize shortlisting probability while remaining technically honest, credible, and interview-safe. The candidate must be positioned as a Backend / Distributed Systems Engineer with strong system and networking fundamentals, not as a specialist system or firmware engineer.
+Generate a highly targeted, ATS-friendly resume that dynamically adapts to the provided job description, using the provided resume strictly as a reference. The resume must maximize shortlisting probability while remaining technically honest, credible, and interview-safe. 
 
 Context
 I will provide:
 
 A Job Description (JD)
 
-My current resume (reference only)
+The candidate's current resume (reference only)
 
 You must:
 
 Analyze the JD to extract required skills, preferred skills, responsibilities, and ATS keywords
 
-Adapt, reorder, and reframe my experience to align with the JD without exaggeration or fabrication
+Adapt, reorder, and reframe the candidate's experience to align with the JD without exaggeration or fabrication
 
 Emphasize:
 
-Backend engineering experience
+The experience and skills that match the JD
 
-Distributed systems thinking
+Quantified impact, performance, scalability, and reliability
 
-Performance, scalability, and reliability
-
-Strong academic and foundational knowledge in Operating Systems and Networking
+Strictly limit skills and experience to those present in the reference resume
 
 Clearly distinguish between:
 
 Hands-on professional experience
 
 Foundational / academic / conceptual knowledge
-
-Avoid claiming direct experience in:
-
-System software
-
-Switch/router firmware
-
-Network protocol implementation
-
-ASIC / SDK development
-unless explicitly present in my reference resume
 
 Constraints
 
@@ -140,14 +127,14 @@ Formatting & Styling Rules (STRICT)
 - Use round bullets (•) or hyphens (-).
 - 1–2 lines maximum per bullet.
 - Start with strong action verbs.
-- Bold important keywords, technologies, and metrics (**30% reduction**, **Java**, **Spring Boot**, etc.).
+- Bold important keywords, technologies, and metrics.
 
 7: ATS Safety
 - Plain text/Markdown only. No tables or columns.
 
 Optimization Rules
 
-- Prioritize JD-critical backend and infrastructure-adjacent keywords
+- Prioritize JD-critical keywords
 
 - Reorder skills and bullets based on JD importance
 
@@ -192,7 +179,6 @@ Formatting & Styling Rules (STRICT)
 - Company/Project name on one line.
 - Role/Dates on the next line.
 - One blank line before bullet lists.
-- Frame projects as distributed application systems.
 
 7: ATS Safety
 - No tables, columns, text boxes, or background shading.
@@ -215,82 +201,22 @@ Format
 You MUST return a JSON object with the following structure:
 {
     "resume_markdown": "The full resume content in Markdown format...",
-    "validation_summary": "The final validation summary/report..."
+    "original_ats_score": 45,
+    "ats_score": 85,
+    "optimization_report": [
+        "Identified X as a key keyword and prioritized it.",
+        "Reframed Y experience to highlight Z impact.",
+        "Ensured education section aligns with JD requirements."
+    ]
 }
 Job Description:
 
             ${jobDescription}
 
 
-            My Current Resume (Reference):
+            The Candidate's Current Resume (Reference):
             [
-                Gopi Ajatarao
-                Bengaluru, India
-                gopi.ajatarao@gmail.com | 📞 +91 90088 30298
-                LinkedIn: linkedin.com/in/gopi-ajt | GitHub: github.com/GopiAjt
-                ________________________________________
-                Professional Summary:
-                Full Stack Developer with 2+ years of experience designing and developing high-performance, responsive web applications using Vue.js, Spring Boot, and MySQL. Skilled in building scalable backend systems, integrating RESTful APIs, and crafting dynamic frontends for seamless user experiences. Experienced in Docker-based deployments, database optimization, and Agile development. Passionate about delivering clean, maintainable, and efficient code that drives business impact.
-                ________________________________________
-                Core Competencies:
-                ●	Full Stack Web Development
-                ●	RESTful API Design & Integration
-                ●	Scalable Backend Architecture
-                ●	Frontend Development & UI Optimization
-                ●	Docker & Containerization
-                ●	MySQL Performance Tuning
-                ●	Agile Collaboration & SDLC
-                ●	Version Control (Git & GitHub)
-                ________________________________________
-                Technical Skills:
-                Languages & Frameworks:
-                Java (Intermediate), JavaScript (Intermediate), Vue.js (Advanced), Spring Boot (Intermediate), HTML (Advanced), CSS (Advanced)
-                Databases & Tools:
-                MySQL (Advanced), Docker (Intermediate), Git (Advanced), JSON (Advanced), JDBC (Intermediate)
-                Frontend Ecosystem:
-                PrimeVue (Advanced), Vuex (Advanced), Bootstrap (Advanced)
-                Other Skills:
-                Data Structures, Object-Oriented Design, Algorithmic Thinking, API Testing (Postman), Deployment Automation
-                ________________________________________
-                Professional Experience:
-                Kochar Infotech Pvt. Ltd. | Bengaluru, India
-                Full Stack Developer | March 2024 – Present
-                Roles & Responsibilities:
-                ●	Developed and maintained end-to-end web application modules using Vue.js (frontend) and Spring Boot (backend).
-                ●	Designed and integrated RESTful APIs for efficient data handling and seamless frontend-backend communication.
-                ●	Built responsive and dynamic UI components using PrimeVue, Vuex, and Bootstrap for enhanced user experience.
-                ●	Optimized MySQL database queries and schemas, improving backend performance and reducing latency.
-                ●	Implemented JWT authentication and role-based access controls to secure user and admin sessions.
-                ●	Deployed applications in Dockerized environments, ensuring scalable and reproducible deployments.
-                ●	Participated in Agile sprint planning, code reviews, and cross-functional collaboration to deliver high-quality features.
-                ●	Troubleshot production issues and optimized application performance, improving user engagement and reliability.
-                Key Achievements:
-                ●	Improved frontend load speed by 25% using optimized component rendering and lazy loading.
-                ●	Streamlined backend performance and database queries, reducing API response times by 30%.
-                ●	Delivered maintainable, scalable modules that supported concurrent user access efficiently.
-                ________________________________________
-                Project:
-                CaptureNow — Online Photographer Booking & Management Platform
-                Description:
-                Developed a full-stack web application enabling users to search, book, and manage photographer services efficiently. The platform offers real-time booking updates, reviews, and an intuitive interface for both customers and photographers.
-                Roles & Responsibilities:
-                ●	Developed end-to-end full-stack solution with Vue.js frontend and Spring Boot backend.
-                ●	Integrated RESTful APIs for secure and efficient data operations.
-                ●	Implemented Vuex state management and local storage for session persistence and dynamic booking data.
-                ●	Designed scalable MySQL schemas for users, photographers, bookings, and reviews.
-                ●	Built responsive UI components using Vue.js, PrimeVue, and Bootstrap for cross-device compatibility.
-                ●	Optimized API calls and database queries to reduce latency and enhance performance.
-                ●	Implemented JWT authentication and role-based access control for secure user management.
-                ●	Conducted testing, error handling, and performance optimization to ensure application reliability.
-                Key Achievements:
-                ●	Reduced page load times by 30% through optimized frontend and backend workflows.
-                ●	Streamlined booking process, cutting user transaction time by 25%.
-                ●	Built a robust, scalable backend architecture capable of supporting high concurrent usage.
-                ________________________________________
-                Education:
-                Bachelor of Engineering (B.E.) in Computer Science & Engineering
-                Maratha Mandal Engineering College, Belagavi, India
-                Aug 2018 – Aug 2022
+              ${userResume}
             ]
 
     `;
@@ -305,7 +231,13 @@ Job Description:
         return JSON.parse(text);
     } catch (e) {
         console.error("Failed to parse JSON response:", text);
-        return { resume_markdown: text, validation_summary: "Could not parse validation summary." };
+        // Fallback for non-JSON responses
+        return { 
+            resume_markdown: text, 
+            original_ats_score: 0,
+            ats_score: 0,
+            optimization_report: ["Failed to parse detailed report."]
+        };
     }
   } catch (error) {
     console.error("Error generating resume:", error);

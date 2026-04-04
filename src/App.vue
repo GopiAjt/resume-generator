@@ -16,15 +16,10 @@ export default {
       <div class="logo">
         <span class="logo-text" @click="home_link">ResumeGen</span>
       </div>
-
       <nav>
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
       </nav>
-
-      <!-- <div class="actions">
-        <a href="#" class="btn btn-primary">Get Started</a>
-      </div> -->
     </div>
   </header>
 

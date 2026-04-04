@@ -2,13 +2,25 @@
 import { ref } from 'vue'
 import { generateResume } from '@/services/gemini'
 import { marked } from 'marked'
-// Removed html2pdf.js in favor of browser-native printing for better ATS compatibility
+import * as pdfjsLib from 'pdfjs-dist'
+import mammoth from 'mammoth'
+import ResumeDetailFormModal from '@/components/ResumeDetailFormModal.vue'
+
+// Setup PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
+
 const jobDescription = ref('')
 const companyName = ref('')
+const resumeFile = ref<File | null>(null)
+const extractedResumeText = ref('')
 const isGenerating = ref(false)
+const isExtracting = ref(false)
+const showModal = ref(false)
 const generatedResume = ref('')
 const generatedResumeHtml = ref('')
-const validationSummary = ref('')
+const originalAtsScore = ref(0)
+const atsScore = ref(0)
+const optimizationReport = ref<string[]>([])
 const errorMessage = ref('')
 const resumeContainer = ref<HTMLElement | null>(null)
 const toast = ref({
@@ -24,25 +36,87 @@ const showToast = (message: string, type = 'error') => {
     }, 5000)
 }
 
+const handleFormSubmit = (text: string) => {
+    extractedResumeText.value = text
+    resumeFile.value = null // Clear file if they chose form
+    showModal.value = false
+    showToast('Your details have been processed. Now enter the Job Description!', 'success')
+}
+
+const handleFileChange = async (event: Event) => {
+    const target = event.target as HTMLInputElement
+    if (target.files && target.files[0]) {
+        resumeFile.value = target.files[0]
+        await extractTextFromFile(resumeFile.value)
+    }
+}
+
+const extractTextFromFile = async (file: File) => {
+    isExtracting.value = true
+    errorMessage.value = ''
+    extractedResumeText.value = ''
+
+    try {
+        const fileType = file.type
+        const fileName = file.name.toLowerCase()
+
+        if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+            const arrayBuffer = await file.arrayBuffer()
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+            let text = ''
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i)
+                const content = await page.getTextContent()
+                const strings = content.items.map((item: any) => item.str)
+                text += strings.join(' ') + '\n'
+            }
+            extractedResumeText.value = text
+        } else if (
+            fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+            fileName.endsWith('.docx')
+        ) {
+            const arrayBuffer = await file.arrayBuffer()
+            const result = await mammoth.extractRawText({ arrayBuffer })
+            extractedResumeText.value = result.value
+        } else {
+            throw new Error('Unsupported file format. Please upload a PDF or DOCX file.')
+        }
+
+        if (!extractedResumeText.value.trim()) {
+            throw new Error('Failed to extract text from the file. The file might be empty or scanned as an image.')
+        }
+    } catch (error: any) {
+        console.error('Text extraction failed:', error)
+        errorMessage.value = error.message || 'Failed to read the resume file.'
+        resumeFile.value = null
+    } finally {
+        isExtracting.value = false
+    }
+}
+
 const handleSubmit = async () => {
-    if (!jobDescription.value.trim()) return
+    if (!jobDescription.value.trim() || !extractedResumeText.value.trim()) return
 
     isGenerating.value = true
     errorMessage.value = ''
     generatedResume.value = ''
     generatedResumeHtml.value = ''
-    validationSummary.value = ''
+    originalAtsScore.value = 0
+    atsScore.value = 0
+    optimizationReport.value = []
 
     try {
-        const response = await generateResume(jobDescription.value)
+        const response = await generateResume(jobDescription.value, extractedResumeText.value)
 
         if (typeof response === 'string') {
             generatedResume.value = response
-            generatedResumeHtml.value = marked(response) as string
+            generatedResumeHtml.value = (await marked(response)) as string
         } else {
             generatedResume.value = response.resume_markdown
-            generatedResumeHtml.value = marked(response.resume_markdown) as string
-            validationSummary.value = response.validation_summary
+            generatedResumeHtml.value = (await marked(response.resume_markdown)) as string
+            originalAtsScore.value = response.original_ats_score
+            atsScore.value = response.ats_score
+            optimizationReport.value = response.optimization_report
         }
     } catch (error: any) {
         console.error('Failed to generate resume:', error)
@@ -57,13 +131,36 @@ const handleSubmit = async () => {
     }
 }
 
+const getScoreClass = (score: number) => {
+    if (score >= 80) return 'high'
+    if (score >= 60) return 'medium'
+    return 'low'
+}
+
+const getFilename = () => {
+    if (!generatedResume.value) return 'resume'
+
+    // Extract name from the first H1 header in markdown
+    const nameMatch = generatedResume.value.match(/^#\s+(.+)$/m)
+    let rawName = 'Tailored'
+    if (nameMatch && nameMatch[1]) {
+        rawName = nameMatch[1].trim()
+    }
+
+    // Sanitize name for filename
+    const sanitizedName = rawName.replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_')
+    const companySuffix = companyName.value ? `_${companyName.value.replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_')}` : ''
+
+    return `${sanitizedName}${companySuffix}_resume`
+}
+
 const downloadPDF = () => {
     if (!generatedResumeHtml.value) return
 
     // Set document title temporarily to influence the default filename in the print dialog
     const originalTitle = document.title
-    const companySuffix = companyName.value ? `_${companyName.value.replace(/\s+/g, '_')}` : ''
-    document.title = `Gopi_Aajatarao${companySuffix}_resume`
+    const fileName = getFilename()
+    document.title = fileName
 
     // Create a hidden iframe
     const iframe = document.createElement('iframe')
@@ -161,8 +258,7 @@ const downloadPDF = () => {
 const downloadDOC = () => {
     if (!generatedResumeHtml.value) return
 
-    const companySuffix = companyName.value ? `_${companyName.value.replace(/\s+/g, '_')}` : ''
-    const fileName = `Gopi_Aajatarao${companySuffix}_resume.doc`
+    const fileName = `${getFilename()}.doc`
 
     const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
         "xmlns:w='urn:schemas-microsoft-com:office:word' " +
@@ -202,6 +298,7 @@ const downloadDOC = () => {
             <div v-if="toast.show" class="toast-notification" :class="toast.type">
                 <div class="toast-content">
                     <span v-if="toast.type === 'warning'" class="toast-icon">⚠️</span>
+                    <span v-else-if="toast.type === 'success'" class="toast-icon">✅</span>
                     <span v-else class="toast-icon">❌</span>
                     <p>{{ toast.message }}</p>
                 </div>
@@ -222,6 +319,52 @@ const downloadDOC = () => {
             </div>
 
             <div class="form-group">
+                <label for="resume-upload">Upload Current Resume (PDF/DOCX)</label>
+                <div class="file-upload-wrapper">
+                    <label for="resume-upload" class="file-upload-label"
+                        :class="{ 'disabled': isGenerating || isExtracting }">
+                        <div class="upload-icon">
+                            <svg v-if="!resumeFile" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                        </div>
+                        <div class="upload-text">
+                            <span v-if="!resumeFile" class="main-text">Choose your resume</span>
+                            <span v-else class="main-text file-name">{{ resumeFile.name }}</span>
+                            <span class="sub-text">PDF or DOCX (Max 10MB)</span>
+                        </div>
+                    </label>
+                    <input id="resume-upload" type="file" @change="handleFileChange" accept=".pdf,.docx"
+                        :disabled="isGenerating || isExtracting" class="file-input-hidden" />
+
+                    <div v-if="isExtracting" class="extracting-status">
+                        <span class="spinner"></span>
+                        <span>Analyzing resume content...</span>
+                    </div>
+                    <Transition name="fade">
+                        <div v-if="extractedResumeText && !isExtracting" class="success-status">
+                            <span class="status-icon">✨</span>
+                            <span>Resume analyzed and ready for tailoring</span>
+                        </div>
+                    </Transition>
+                </div>
+                <div class="form-help">
+                    <p>Don't have a resume? <button type="button" class="btn-link" @click="showModal = true">Fill in
+                            your details manually</button></p>
+                </div>
+            </div>
+
+            <div class="form-group">
                 <label for="job-description">Job Description</label>
                 <textarea id="job-description" v-model="jobDescription"
                     placeholder="Paste the full job description here..." rows="10" :disabled="isGenerating"></textarea>
@@ -233,7 +376,7 @@ const downloadDOC = () => {
 
             <div class="actions">
                 <button @click="handleSubmit" class="btn btn-primary"
-                    :disabled="!jobDescription.trim() || isGenerating">
+                    :disabled="!jobDescription.trim() || !extractedResumeText.trim() || isGenerating || isExtracting">
                     <span v-if="isGenerating">Generating Resume...</span>
                     <span v-else>Build Resume</span>
                 </button>
@@ -254,13 +397,40 @@ const downloadDOC = () => {
                 <div class="resume-content" v-html="generatedResumeHtml"></div>
             </div>
 
-            <div class="validation-summary" v-if="validationSummary">
-                <h3>Optimization Report</h3>
-                <div class="summary-content">
-                    <pre>{{ validationSummary }}</pre>
+            <div class="optimization-report" v-if="optimizationReport.length">
+                <div class="report-header">
+                    <div class="header-main">
+                        <span class="report-icon">📊</span>
+                        <h3>Optimization Report</h3>
+                    </div>
+                    <div class="score-comparison">
+                        <div class="ats-score-badge original" :class="getScoreClass(originalAtsScore)">
+                            <span class="score-label">Original</span>
+                            <span class="score-value">{{ originalAtsScore }}%</span>
+                        </div>
+                        <div class="score-arrow">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                                <polyline points="12 5 19 12 12 19" />
+                            </svg>
+                        </div>
+                        <div class="ats-score-badge tailored" :class="getScoreClass(atsScore)">
+                            <span class="score-label">Tailored</span>
+                            <span class="score-value">{{ atsScore }}%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="report-content">
+                    <ul class="report-list">
+                        <li v-for="(item, index) in optimizationReport" :key="index">{{ item }}</li>
+                    </ul>
                 </div>
             </div>
         </div>
+
+        <ResumeDetailFormModal v-if="showModal" @close="showModal = false" @submit="handleFormSubmit" />
     </div>
 </template>
 
@@ -322,15 +492,180 @@ textarea,
     color: var(--color-text);
     font-family: var(--font-family-base);
     font-size: 1rem;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    transition: all var(--transition-base);
+}
+
+.file-input-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.file-upload-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    width: 100%;
+}
+
+.file-upload-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-5) var(--space-6);
+    background: hsla(220, 20%, 96%, 1);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+@media (prefers-color-scheme: dark) {
+    .file-upload-label {
+        background: hsla(220, 40%, 12%, 1);
+        border-color: hsla(220, 40%, 20%, 1);
+    }
+}
+
+.file-upload-label:hover {
+    border-color: var(--color-primary);
+    background: hsla(var(--hue-primary), 80%, 60%, 0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.file-upload-label.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.upload-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background: white;
+    border-radius: var(--radius-md);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+    .upload-icon {
+        background: hsla(220, 40%, 18%, 1);
+    }
+}
+
+.upload-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.main-text {
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--color-heading);
+}
+
+.file-name {
+    color: var(--color-primary);
+}
+
+.sub-text {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+.extracting-status {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-1) var(--space-4);
+}
+
+.success-status {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #059669;
+    /* Emerald 600 */
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-1) var(--space-4);
+}
+
+@media (prefers-color-scheme: dark) {
+    .success-status {
+        color: #34d399;
+    }
+}
+
+.status-icon {
+    font-size: 1.1rem;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid hsla(var(--hue-primary), 80%, 60%, 0.2);
+    border-top-color: var(--color-primary);
+    border-radius: 50%;
+    animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 textarea {
     resize: vertical;
 }
 
+.form-help {
+    margin-top: var(--space-4);
+    text-align: center;
+}
+
+.form-help p {
+    font-size: 0.95rem;
+    color: var(--color-text-muted);
+}
+
+.btn-link {
+    background: transparent;
+    border: none;
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    font-size: inherit;
+    transition: color var(--transition-fast);
+}
+
+.btn-link:hover {
+    color: var(--color-secondary);
+}
+
 textarea:focus,
-.company-input:focus {
+.company-input:focus,
+.file-input:focus {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px hsla(var(--hue-primary), 80%, 60%, 0.1);
@@ -589,24 +924,193 @@ pre {
     color: var(--color-text);
 }
 
-.validation-summary {
-    margin-top: var(--space-8);
+.optimization-report {
+    margin-top: var(--space-10);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8);
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+}
+
+@media (prefers-color-scheme: dark) {
+    .optimization-report {
+        background: hsla(220, 40%, 10%, 1);
+        border-color: hsla(220, 40%, 20%, 1);
+    }
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--color-border);
+}
+
+@media (max-width: 640px) {
+    .report-header {
+        flex-direction: column;
+        gap: var(--space-4);
+        align-items: flex-start;
+    }
+
+    .score-comparison {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+.header-main {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.report-icon {
+    font-size: 1.5rem;
+}
+
+.optimization-report h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-heading);
+}
+
+.score-comparison {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.score-arrow {
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    animation: move-right 2s infinite ease-in-out;
+}
+
+@keyframes move-right {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(4px);
+    }
+}
+
+.ats-score-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--space-1) var(--space-4);
     background: hsla(var(--hue-primary), 50%, 95%, 1);
-    border: 1px solid hsla(var(--hue-primary), 50%, 80%, 1);
-    border-radius: var(--radius-md);
-    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    border: 1px solid hsla(var(--hue-primary), 50%, 85%, 1);
+    min-width: 80px;
 }
 
-.validation-summary h3 {
+.ats-score-badge.original {
+    background: hsla(220, 20%, 96%, 1);
+    border-color: var(--color-border);
+    opacity: 0.8;
+}
+
+.ats-score-badge.high {
+    background: hsla(142, 70%, 95%, 1);
+    border-color: hsla(142, 70%, 85%, 1);
+}
+
+.ats-score-badge.high .score-value {
+    color: #059669;
+}
+
+.ats-score-badge.medium {
+    background: hsla(45, 90%, 95%, 1);
+    border-color: hsla(45, 90%, 85%, 1);
+}
+
+.ats-score-badge.medium .score-value {
+    color: #d97706;
+}
+
+.ats-score-badge.low {
+    background: hsla(0, 80%, 95%, 1);
+    border-color: hsla(0, 80%, 85%, 1);
+}
+
+.ats-score-badge.low .score-value {
+    color: #dc2626;
+}
+
+@media (prefers-color-scheme: dark) {
+    .ats-score-badge {
+        background: hsla(220, 40%, 15%, 1);
+        border-color: hsla(220, 40%, 25%, 1);
+    }
+
+    .ats-score-badge.original {
+        background: hsla(220, 40%, 12%, 1);
+        border-color: hsla(220, 40%, 18%, 1);
+    }
+
+    .ats-score-badge.high {
+        background: hsla(142, 70%, 10%, 1);
+    }
+
+    .ats-score-badge.medium {
+        background: hsla(45, 90%, 10%, 1);
+    }
+
+    .ats-score-badge.low {
+        background: hsla(0, 80%, 10%, 1);
+    }
+}
+
+.score-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+}
+
+.score-value {
+    font-size: 1.25rem;
+    font-weight: 800;
     color: var(--color-primary);
-    margin-bottom: var(--space-4);
 }
 
-.summary-content pre {
-    background: transparent;
+.report-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.report-list li {
+    font-size: 1.05rem;
+    line-height: 1.5;
     color: var(--color-text);
-    font-family: var(--font-family-base);
-    white-space: pre-wrap;
+    padding-left: var(--space-8);
+    position: relative;
+}
+
+.report-list li::before {
+    content: "✔️";
+    position: absolute;
+    left: 0;
+    color: var(--color-primary);
+    font-size: 1rem;
 }
 
 /* Toast Notification */
@@ -636,6 +1140,11 @@ pre {
 .toast-notification.warning {
     border-left: 4px solid #f59e0b;
     /* Amber 500 */
+}
+
+.toast-notification.success {
+    border-left: 4px solid #10b981;
+    /* Emerald 500 */
 }
 
 .toast-content {
@@ -688,5 +1197,15 @@ pre {
         opacity: 1;
         transform: translate(-50%, 0);
     }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }
 </style>
