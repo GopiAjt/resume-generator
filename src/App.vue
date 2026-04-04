@@ -33,7 +33,7 @@ export default {
 
   <footer>
     <div class="container">
-      <p style="font-size: smaller;">&copy; 2024 Resume Generator. All rights reserved.</p>
+      <p style="font-size: smaller;">&copy; 2024 Resume Optimizer. All rights reserved.</p>
     </div>
   </footer>
 </template>

@@ -307,8 +307,9 @@ const downloadDOC = () => {
         </Transition>
 
         <div class="header-section">
-            <h1 class="text-display">Target Your Resume</h1>
-            <p class="subtitle">Paste the job description below to tailor your resume for this specific role.</p>
+            <h1 class="text-display">Optimize Your Resume</h1>
+            <p class="subtitle">Upload your existing resume and paste a job description to get a tailored, ATS-ready
+                version in seconds.</p>
         </div>
 
         <div class="input-section" v-if="!generatedResume">
@@ -354,20 +355,21 @@ const downloadDOC = () => {
                     <Transition name="fade">
                         <div v-if="extractedResumeText && !isExtracting" class="success-status">
                             <span class="status-icon">✨</span>
-                            <span>Resume analyzed and ready for tailoring</span>
+                            <span>Resume analyzed and ready for optimization</span>
                         </div>
                     </Transition>
                 </div>
                 <div class="form-help">
-                    <p>Don't have a resume? <button type="button" class="btn-link" @click="showModal = true">Fill in
-                            your details manually</button></p>
+                    <p>Don't have a resume to upload? <button type="button" class="btn-link"
+                            @click="showModal = true">Provide your details manually</button></p>
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="job-description">Job Description</label>
+                <label for="job-description">Target Job Description</label>
                 <textarea id="job-description" v-model="jobDescription"
-                    placeholder="Paste the full job description here..." rows="10" :disabled="isGenerating"></textarea>
+                    placeholder="Paste the job description here to optimize your resume..." rows="10"
+                    :disabled="isGenerating"></textarea>
             </div>
 
             <div v-if="errorMessage" class="error-message">
@@ -377,8 +379,8 @@ const downloadDOC = () => {
             <div class="actions">
                 <button @click="handleSubmit" class="btn btn-primary"
                     :disabled="!jobDescription.trim() || !extractedResumeText.trim() || isGenerating || isExtracting">
-                    <span v-if="isGenerating">Generating Resume...</span>
-                    <span v-else>Build Resume</span>
+                    <span v-if="isGenerating">Optimizing Your Resume...</span>
+                    <span v-else>Optimize Resume</span>
                 </button>
             </div>
         </div>
