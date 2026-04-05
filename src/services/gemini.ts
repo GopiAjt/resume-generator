@@ -226,9 +226,29 @@ Job Description:
     const text = response.text();
 
     try {
-        console.log(text);
+        console.log("Raw response:", text);
+        
+        // Clean the response text: 
+        // 1. Remove markdown code blocks if present (```json or ```)
+        // 2. Remove leading/trailing whitespace
+        let cleanedText = text.trim();
+        if (cleanedText.startsWith('```')) {
+            cleanedText = cleanedText.replace(/^```(json)?\n?/, '').replace(/\n?```$/, '').trim();
+        }
 
-        return JSON.parse(text);
+        // Try to parse the cleaned text
+        try {
+            return JSON.parse(cleanedText);
+        } catch (initialParseError) {
+            // If it still fails, try to find the first '{' and last '}'
+            const startBracket = cleanedText.indexOf('{');
+            const endBracket = cleanedText.lastIndexOf('}');
+            if (startBracket !== -1 && endBracket !== -1) {
+                const jsonSubstring = cleanedText.substring(startBracket, endBracket + 1);
+                return JSON.parse(jsonSubstring);
+            }
+            throw initialParseError;
+        }
     } catch (e) {
         console.error("Failed to parse JSON response:", text);
         // Fallback for non-JSON responses

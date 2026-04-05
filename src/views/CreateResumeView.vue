@@ -29,6 +29,15 @@ const toast = ref({
     type: 'error'
 })
 
+const templates = [
+    { id: 'modern', name: 'Modern Blue', icon: '✨', description: 'Clean, professional with blue accents.' },
+    { id: 'executive', name: 'Executive', icon: '👔', description: 'Classic serif font for a senior look.' },
+    { id: 'minimal', name: 'Minimalist', icon: '🌱', description: 'Simple, spacious and elegant.' },
+    { id: 'technical', name: 'Technical', icon: '💻', description: 'Compact and focused on skills.' }
+]
+
+const selectedTemplate = ref('modern')
+
 const showToast = (message: string, type = 'error') => {
     toast.value = { show: true, message, type }
     setTimeout(() => {
@@ -154,85 +163,107 @@ const getFilename = () => {
     return `${sanitizedName}${companySuffix}_resume`
 }
 
+const getTemplateStyles = (templateId: string, isPrint = false) => {
+    const baseStyles = `
+        font-family: 'Inter', -apple-system, system-ui, sans-serif;
+        color: #1a202c;
+        line-height: 1.4;
+    `;
+
+    const templates: Record<string, string> = {
+        modern: `
+            h1 { font-size: 24pt; color: #1a365d; margin-bottom: 4pt; font-weight: 800; letter-spacing: -0.02em; }
+            p:first-of-type { font-size: 10pt; color: #4a5568; margin-bottom: 16pt; font-weight: 500; }
+            h2 { font-size: 12pt; color: #2b6cb0; text-transform: uppercase; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 4pt; margin-top: 20pt; margin-bottom: 10pt; font-weight: 700; letter-spacing: 0.05em; }
+            h3 { font-size: 11pt; color: #1a202c; margin-top: 12pt; margin-bottom: 4pt; font-weight: 700; }
+            p, li { font-size: 10pt; color: #2d3748; margin-bottom: 5pt; }
+            li::before { content: "•"; color: #2b6cb0; font-weight: bold; margin-right: 8pt; }
+        `,
+        executive: `
+            body { font-family: 'Georgia', serif; }
+            h1 { font-size: 26pt; color: #000; text-align: center; margin-bottom: 6pt; font-weight: normal; }
+            p:first-of-type { font-size: 10pt; color: #333; text-align: center; margin-bottom: 24pt; border-bottom: 1px solid #333; padding-bottom: 10pt; }
+            h2 { font-size: 13pt; color: #000; border-top: 2px solid #000; border-bottom: 1px solid #000; padding: 4pt 0; margin-top: 22pt; margin-bottom: 12pt; text-align: center; font-weight: bold; }
+            h3 { font-size: 11.5pt; color: #000; margin-top: 14pt; margin-bottom: 4pt; font-weight: bold; }
+            p, li { font-size: 10.5pt; color: #111; margin-bottom: 6pt; }
+            li::before { content: "▪"; color: #000; margin-right: 8pt; }
+        `,
+        minimal: `
+            h1 { font-size: 22pt; color: #111; margin-bottom: 2pt; font-weight: 300; }
+            p:first-of-type { font-size: 9pt; color: #718096; margin-bottom: 30pt; text-transform: uppercase; letter-spacing: 0.1em; }
+            h2 { font-size: 10pt; color: #111; text-transform: uppercase; letter-spacing: 0.2em; margin-top: 30pt; margin-bottom: 10pt; font-weight: 600; }
+            h3 { font-size: 11pt; color: #111; margin-top: 15pt; margin-bottom: 5pt; font-weight: 600; }
+            p, li { font-size: 10pt; color: #4a5568; margin-bottom: 8pt; }
+            li::before { content: "—"; color: #cbd5e0; margin-right: 8pt; }
+        `,
+        technical: `
+            body { font-family: 'JetBrains Mono', 'Menlo', 'Monaco', 'Courier New', monospace; font-size: 9.5pt; }
+            h1 { font-size: 22pt; color: #000; margin-bottom: 4pt; border-left: 8px solid #000; padding: 6pt 15pt; background: #f7fafc; letter-spacing: -0.02em; font-weight: 800; }
+            p:first-of-type { font-size: 9pt; color: #fff; background: #1a202c; padding: 10pt 20pt; border-radius: 0 0 12px 12px; margin-bottom: 25pt; }
+            h2 { font-size: 11pt; color: #000; background: #edf2f7; padding: 6pt 12pt; margin-top: 20pt; margin-bottom: 10pt; font-weight: 800; border-radius: 4px; }
+            h3 { font-size: 10.5pt; color: #2b6cb0; border-bottom: 1px dashed #cbd5e0; display: inline-block; padding-bottom: 2pt; margin-top: 12pt; font-weight: 800; }
+            p, li { font-size: 9.5pt; color: #2d3748; margin-bottom: 5pt; }
+            li { padding-left: 1.5rem; }
+            li::before { content: "::"; color: #718096; font-weight: 800; position: absolute; left: 0; font-size: 0.9em; }
+        `
+    };
+
+    return `
+        ${baseStyles}
+        ${templates[templateId] || templates.modern}
+        ul { list-style: none; padding-left: 0; }
+        li { position: relative; }
+        strong { font-weight: 600; }
+        a { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        h1, h2, h3, li { page-break-inside: avoid; break-inside: avoid; }
+    `;
+}
+
 const downloadPDF = () => {
     if (!generatedResumeHtml.value) return
 
-    // Set document title temporarily to influence the default filename in the print dialog
     const originalTitle = document.title
     const fileName = getFilename()
     document.title = fileName
 
-    // Create a hidden iframe
     const iframe = document.createElement('iframe')
     iframe.style.position = 'fixed'
-    iframe.style.left = '-9999px' // Position far off-screen
+    iframe.style.left = '-9999px'
     iframe.style.top = '0'
-    iframe.style.width = '1024px' // Fixed width to force desktop layout during calculation
-    iframe.style.height = '1000px'
+    iframe.style.width = '210mm'
+    iframe.style.height = '297mm'
     iframe.style.border = 'none'
-    iframe.style.opacity = '0' // Hidden but not removed from layout flow for some print engines
     iframe.style.zIndex = '-1'
     document.body.appendChild(iframe)
 
     const doc = iframe.contentWindow?.document
     if (!doc) return
 
-    // Table Margin Hack: Set @page margin to 0 to suppress browser HUD
-    // Viewport Hack: content="width=1024" forces mobile browsers to treat the print context as desktop
     const content = `
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="utf-8">
-            <meta name="viewport" content="width=1024">
             <style>
-                @page { size: A4; margin: 0; }
+                @page { 
+                    size: A4; 
+                    margin: 0; /* Set to 0 to remove browser headers/footers */
+                }
                 body { 
                     margin: 0; 
-                    padding: 0; 
-                    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-                    background: white;
-                    color: #1a202c;
-                    line-height: 1.5;
-                    width: 1024px; /* Matches viewport for consistent measure */
+                    padding: 15mm; /* Move margin here */
+                    width: 210mm;
+                    min-height: 297mm;
+                    box-sizing: border-box;
                 }
-                table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-                .margin-header { height: 0.5in; }
-                .margin-footer { height: 0.5in; }
-                .content-cell { 
-                    padding: 0 0.5in; 
-                    vertical-align: top;
-                }
-                
-                h1 { font-size: 24pt; font-weight: 800; color: #1a365d; margin-bottom: 2pt; letter-spacing: -0.02em; }
-                p:first-of-type { font-size: 10.5pt; color: #4a5568; margin-bottom: 20pt; font-weight: 500; }
-                h2 { 
-                    font-size: 13pt; font-weight: 700; text-transform: uppercase; color: #2b6cb0; 
-                    border-bottom: 1.5px solid #e2e8f0; padding-bottom: 4pt; margin-top: 24pt; margin-bottom: 12pt; 
-                }
-                h3 { font-size: 11.5pt; font-weight: 700; color: #1a202c; margin-top: 14pt; margin-bottom: 4pt; font-weight: bold; }
-                p, li { font-size: 10.5pt; color: #2d3748; margin-bottom: 6pt; }
-                ul { padding-left: 1.25rem; margin-bottom: 10pt; list-style-type: disc; }
-                li { margin-bottom: 5pt; }
-                strong { font-weight: 600; color: #1a202c; }
-                a { color: #2b6cb0; text-decoration: none; }
-                a:hover { text-decoration: underline; }
-                * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                h1, h2, h3, li { page-break-inside: avoid; break-inside: avoid; }
+                ${getTemplateStyles(selectedTemplate.value, true)}
             </style>
         </head>
         <body>
-            <table>
-                <thead><tr><td><div class="margin-header"></div></td></tr></thead>
-                <tbody>
-                    <tr>
-                        <td class="content-cell">
-                            ${generatedResumeHtml.value}
-                        </td>
-                    </tr>
-                </tbody>
-                <tfoot><tr><td><div class="margin-footer"></div></td></tr></tfoot>
-            </table>
+            <div class="resume-wrapper">
+                ${generatedResumeHtml.value}
+            </div>
         </body>
         </html>
     `
@@ -241,7 +272,6 @@ const downloadPDF = () => {
     doc.write(content)
     doc.close()
 
-    // Small delay to ensure styles are applied before printing
     setTimeout(() => {
         if (iframe.contentWindow) {
             iframe.contentWindow.focus()
@@ -249,10 +279,9 @@ const downloadPDF = () => {
         }
         setTimeout(() => {
             document.body.removeChild(iframe)
-            // Restore original title
             document.title = originalTitle
         }, 1000)
-    }, 500)
+    }, 800)
 }
 
 const downloadDOC = () => {
@@ -260,19 +289,59 @@ const downloadDOC = () => {
 
     const fileName = `${getFilename()}.doc`
 
-    const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
-        "xmlns:w='urn:schemas-microsoft-com:office:word' " +
-        "xmlns='http://www.w3.org/TR/REC-html40'>" +
-        "<head><meta charset='utf-8'><title>Resume</title><style>" +
-        "body { font-family: 'Arial', sans-serif; margin: 0.5in; }" +
-        "h1 { font-size: 24pt; color: #1a365d; margin-bottom: 2pt; }" +
-        "h2 { font-size: 13pt; color: #2b6cb0; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; margin-top: 24pt; padding-bottom: 4pt; }" +
-        "h3 { font-size: 11.5pt; color: #1a202c; margin-top: 14pt; margin-bottom: 4pt; font-weight: bold; }" +
-        "p, li { font-size: 10.5pt; color: #2d3748; margin-bottom: 6pt; }" +
-        "ul { list-style-type: disc; margin-left: 20px; }" +
-        "strong { font-weight: bold; }" +
-        "a { color: #2b6cb0; text-decoration: none; }" +
-        "</style></head><body>";
+    // Create Word-compatible HTML with standard styles
+    const header = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' 
+              xmlns:w='urn:schemas-microsoft-com:office:word' 
+              xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+            <meta charset='utf-8'>
+            <title>Resume</title>
+            <!--[if gte mso 9]>
+            <xml>
+                <w:WordDocument>
+                    <w:View>Print</w:View>
+                    <w:Zoom>100</w:Zoom>
+                    <w:DoNotOptimizeForBrowser/>
+                </w:WordDocument>
+            </xml>
+            <![endif]-->
+            <style>
+                @page {
+                    size: 8.5in 11in;
+                    margin: 0.75in 0.75in 0.75in 0.75in;
+                    mso-header-margin: 0.5in;
+                    mso-footer-margin: 0.5in;
+                    mso-paper-source: 0;
+                }
+                body { 
+                    font-family: 'Arial', 'Helvetica', sans-serif; 
+                    font-size: 10pt;
+                    line-height: 1.25;
+                    color: #1a202c;
+                }
+                h1 { font-size: 22pt; color: #1a365d; margin-bottom: 4pt; font-weight: bold; }
+                p { margin-top: 0; margin-bottom: 6pt; }
+                h2 { 
+                    font-size: 12pt; 
+                    color: #2b6cb0; 
+                    text-transform: uppercase; 
+                    border-bottom: 1pt solid #e2e8f0; 
+                    margin-top: 18pt; 
+                    margin-bottom: 8pt; 
+                    padding-bottom: 2pt;
+                    font-weight: bold;
+                }
+                h3 { font-size: 11pt; color: #1a202c; margin-top: 12pt; margin-bottom: 3pt; font-weight: bold; }
+                p, li { font-size: 10pt; color: #2d3748; margin-bottom: 4pt; }
+                ul { list-style-type: disc; margin-left: 25pt; margin-top: 0; }
+                li { margin-bottom: 2pt; }
+                strong { font-weight: bold; }
+                a { color: #2b6cb0; text-decoration: none; }
+            </style>
+        </head>
+        <body>`;
+
     const footer = "</body></html>";
     const sourceHTML = header + generatedResumeHtml.value + footer;
 
@@ -395,7 +464,20 @@ const downloadDOC = () => {
                 </div>
             </div>
 
-            <div class="resume-paper" ref="resumeContainer">
+            <div class="template-selector">
+                <div class="template-options">
+                    <div v-for="temp in templates" :key="temp.id" class="template-card"
+                        :class="{ 'active': selectedTemplate === temp.id }" @click="selectedTemplate = temp.id">
+                        <div class="template-icon">{{ temp.icon }}</div>
+                        <div class="template-info">
+                            <span class="template-name">{{ temp.name }}</span>
+                            <span class="template-desc">{{ temp.description }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="resume-paper" :class="'template-' + selectedTemplate" ref="resumeContainer">
                 <div class="resume-content" v-html="generatedResumeHtml"></div>
             </div>
 
@@ -470,7 +552,10 @@ const downloadDOC = () => {
     border: none;
     box-shadow: var(--shadow-xl);
     width: 100%;
-    overflow-x: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
 }
 
 .form-group {
@@ -721,6 +806,8 @@ pre {
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--space-6);
+    width: 100%;
+    max-width: 210mm;
 }
 
 .preview-actions {
@@ -730,7 +817,6 @@ pre {
 
 .resume-paper {
     background: white;
-    /* Visual Page Separation: Subtle horizontal line every 297mm (A4 height) */
     background-image: repeating-linear-gradient(to bottom,
             transparent,
             transparent calc(297mm - 1px),
@@ -738,19 +824,30 @@ pre {
             #e2e8f0 297mm);
     background-size: 100% 297mm;
     color: #1a202c;
-    padding: 0.5in;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-    margin: 0 auto;
+    padding: 0.75in;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    margin: 0 auto var(--space-10);
     width: 210mm;
-    /* A4 Width */
     min-height: 297mm;
-    /* A4 Height */
+    height: auto;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    line-height: 1.5;
+    line-height: 1.4;
     text-align: left;
     box-sizing: border-box;
-    transition: width var(--transition-base), padding var(--transition-base);
+    transition: all var(--transition-base);
     position: relative;
+    overflow-wrap: break-word;
+}
+
+.resume-paper::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--color-primary);
+    opacity: 0.1;
 }
 
 /* Responsive Adjustments */
@@ -791,9 +888,11 @@ pre {
 
     .resume-paper {
         width: 100%;
+        max-width: 100%;
         min-height: auto;
         padding: var(--space-6);
-        /* Reduced padding for mobile */
+        box-shadow: none;
+        border: 1px solid var(--color-border);
     }
 
     .resume-content :deep(h1) {
@@ -801,19 +900,20 @@ pre {
     }
 
     .resume-content :deep(h2) {
-        font-size: 11.5pt;
-        margin-top: 18pt;
+        font-size: 11pt;
+        margin-top: 16pt;
+        margin-bottom: 8pt;
     }
 
     .resume-content :deep(h3) {
-        font-size: 10.5pt;
-        margin-top: 12pt;
+        font-size: 10pt;
+        margin-top: 10pt;
     }
 
     .resume-content :deep(p),
     .resume-content :deep(li),
     .resume-content :deep(p:first-of-type) {
-        font-size: 9.5pt;
+        font-size: 9pt;
         margin-bottom: 4pt;
     }
 }
@@ -915,9 +1015,283 @@ pre {
     margin-left: -1em;
 }
 
-.resume-content :deep(strong) {
+.template-selector {
+    width: 100%;
+    max-width: 210mm;
+    margin-bottom: var(--space-8);
+    background: hsla(220, 20%, 96%, 0.4);
+    backdrop-filter: blur(8px);
+    padding: var(--space-4);
+    border-radius: var(--radius-2xl);
+    border: 1px solid var(--color-border);
+}
+
+@media (prefers-color-scheme: dark) {
+    .template-selector {
+        background: hsla(220, 40%, 10%, 0.4);
+    }
+}
+
+.template-options {
+    display: flex;
+    gap: var(--space-3);
+    overflow-x: auto;
+    padding: var(--space-2);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.template-options::-webkit-scrollbar {
+    display: none;
+}
+
+.template-card {
+    flex: 0 0 150px;
+    padding: var(--space-4);
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-2);
+    box-shadow: var(--shadow-sm);
+}
+
+.template-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-primary);
+}
+
+.template-card.active {
+    border-color: var(--color-primary);
+    background: white;
+    box-shadow: 0 0 0 1px var(--color-primary), 0 10px 25px -10px hsla(var(--hue-primary), 80%, 60%, 0.3);
+}
+
+@media (prefers-color-scheme: dark) {
+    .template-card.active {
+        background: hsla(var(--hue-primary), 40%, 15%, 1);
+    }
+}
+
+.template-icon {
+    font-size: 1.75rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.template-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.template-name {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--color-heading);
+}
+
+.template-desc {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    line-height: 1.2;
+}
+
+/* Template Specific Content Styles */
+.template-modern {
+    font-family: 'Inter', sans-serif !important;
+}
+
+.template-modern :deep(h1) {
+    font-size: 24pt;
+    color: #1a365d;
+    font-weight: 800;
+    border: none;
+}
+
+.template-modern :deep(h2) {
+    color: #2b6cb0;
+    border-bottom: 1.5px solid #e2e8f0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 24pt;
+}
+
+.template-modern :deep(li::before) {
+    content: "•";
+    color: #2b6cb0;
+    font-weight: bold;
+}
+
+.template-executive {
+    font-family: 'Times New Roman', Times, serif !important;
+}
+
+.template-executive :deep(h1) {
+    font-size: 26pt;
+    color: #000;
+    text-align: center;
+    font-weight: 400;
+    border: none;
+}
+
+.template-executive :deep(p:first-of-type) {
+    text-align: center;
+    border-bottom: 1px solid #333;
+    padding-bottom: 10pt;
+    margin-bottom: 25pt;
+}
+
+.template-executive :deep(h2) {
+    text-align: center;
+    border-top: 1px solid #111;
+    border-bottom: 1px solid #111;
+    color: #111;
+    padding: 4pt 0;
+    text-transform: uppercase;
+    margin-top: 22pt;
+}
+
+.template-executive :deep(li::before) {
+    content: "▪";
+    color: #000;
+}
+
+.template-minimal {
+    font-family: 'Helvetica', 'Arial', sans-serif !important;
+}
+
+.template-minimal :deep(h1) {
+    font-size: 22pt;
+    font-weight: 300;
+    color: #111;
+    border: none;
+}
+
+.template-minimal :deep(p:first-of-type) {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #718096;
+    margin-bottom: 30pt;
+}
+
+.template-minimal :deep(h2) {
+    border-bottom: none;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 10pt;
+    color: #111;
+    margin-top: 30pt;
     font-weight: 600;
+}
+
+.template-minimal :deep(li::before) {
+    content: "—";
+    color: #cbd5e0;
+}
+
+.template-technical {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Courier New', monospace !important;
+    font-size: clamp(8pt, 1.25vw, 9.5pt) !important;
+}
+
+.template-technical :deep(h1) {
+    border-left: clamp(4px, 1.5vw, 8px) solid #000;
+    padding: clamp(6pt, 1.5vw, 10pt) clamp(12pt, 3vw, 20pt);
+    font-size: clamp(16pt, 4vw, 22pt);
+    background: #f7fafc;
+    margin-bottom: clamp(4pt, 1vw, 8pt);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+}
+
+.template-technical :deep(p:first-of-type) {
+    background: #1a202c;
+    color: #fff;
+    padding: 10pt clamp(12pt, 3vw, 20pt);
+    font-size: clamp(8.5pt, 1vw, 9.5pt);
+    border-radius: 0 0 12px 12px;
+    margin-bottom: 25pt;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12pt;
+    line-height: 1.4;
+}
+
+.template-technical :deep(h2) {
+    border-bottom: none;
+    background: #edf2f7;
+    padding: 6pt clamp(10pt, 2vw, 15pt);
+    font-size: clamp(10pt, 1.5vw, 11pt);
+    color: #000;
+    border-radius: 4px;
+    margin-top: clamp(14pt, 2.5vw, 18pt);
+    font-weight: 800;
+}
+
+.template-technical :deep(li) {
+    position: relative;
+    padding-left: 1.25rem;
+    margin-bottom: 4pt;
+}
+
+.template-technical :deep(li::before) {
+    content: "::";
+    color: #718096;
+    font-weight: 800;
+    position: absolute;
+    left: 0;
+    font-size: 0.9em;
+}
+
+/* Technical Template Mobile Overrides */
+@media (max-width: 768px) {
+    .template-technical :deep(h1) {
+        border-left-width: 4px;
+    }
+
+    .template-technical :deep(p:first-of-type) {
+        flex-direction: column;
+        gap: 4pt;
+        border-radius: 4px;
+    }
+
+    .template-technical :deep(h2) {
+        margin-left: calc(-1 * var(--space-6));
+        margin-right: calc(-1 * var(--space-6));
+        padding-left: var(--space-6);
+        border-radius: 0;
+    }
+}
+
+.resume-paper {
+    background: white;
+    background-image: repeating-linear-gradient(to bottom,
+            transparent,
+            transparent calc(297mm - 1px),
+            #e2e8f0 calc(297mm - 1px),
+            #e2e8f0 297mm);
+    background-size: 100% 297mm;
     color: #1a202c;
+    padding: 0.75in;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+    margin: 0 auto var(--space-10);
+    width: 210mm;
+    min-height: 297mm;
+    height: auto;
+    font-family: inherit;
+    line-height: 1.4;
+    text-align: left;
+    box-sizing: border-box;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow-wrap: break-word;
 }
 
 .btn-secondary {
