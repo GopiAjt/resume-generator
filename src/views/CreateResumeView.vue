@@ -5,6 +5,8 @@ import { marked } from 'marked'
 import * as pdfjsLib from 'pdfjs-dist'
 import mammoth from 'mammoth'
 import ResumeDetailFormModal from '@/components/ResumeDetailFormModal.vue'
+// @ts-ignore
+import html2pdf from 'html2pdf.js'
 
 // Setup PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`
@@ -220,143 +222,100 @@ const getTemplateStyles = (templateId: string, isPrint = false) => {
     `;
 }
 
-const downloadPDF = () => {
+const downloadPDF = async () => {
+    if (!resumeContainer.value) return
+
+    const fileName = `${getFilename()}.pdf`
+    const element = resumeContainer.value
+
+    const opt = {
+        margin: 10,
+        filename: fileName,
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+            scale: 3,
+            useCORS: true,
+            letterRendering: true,
+            logging: false
+        },
+        jsPDF: {
+            unit: 'mm',
+            format: 'a4',
+            orientation: 'portrait' as const
+        },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    }
+
+    try {
+        showToast('Generating PDF... Please wait.', 'success')
+        await html2pdf().set(opt).from(element).save()
+        showToast('PDF downloaded!', 'success')
+    } catch (error) {
+        console.error('PDF generation failed:', error)
+        showToast('Failed to generate PDF. Click "Copy Markdown" as backup.', 'error')
+    }
+}
+
+const copyToClipboard = async () => {
     if (!generatedResumeHtml.value) return
 
-    const originalTitle = document.title
-    const fileName = getFilename()
-    document.title = fileName
-
-    const iframe = document.createElement('iframe')
-    iframe.style.position = 'fixed'
-    iframe.style.left = '-9999px'
-    iframe.style.top = '0'
-    iframe.style.width = '210mm'
-    iframe.style.height = '297mm'
-    iframe.style.border = 'none'
-    iframe.style.zIndex = '-1'
-    document.body.appendChild(iframe)
-
-    const doc = iframe.contentWindow?.document
-    if (!doc) return
-
-    const content = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <style>
-                @page { 
-                    size: A4; 
-                    margin: 0; /* Set to 0 to remove browser headers/footers */
-                }
-                body { 
-                    margin: 0; 
-                    padding: 15mm; /* Move margin here */
-                    width: 210mm;
-                    min-height: 297mm;
-                    box-sizing: border-box;
-                }
-                ${getTemplateStyles(selectedTemplate.value, true)}
-            </style>
-        </head>
-        <body>
-            <div class="resume-wrapper">
-                ${generatedResumeHtml.value}
-            </div>
-        </body>
-        </html>
-    `
-
-    doc.open()
-    doc.write(content)
-    doc.close()
-
-    setTimeout(() => {
-        if (iframe.contentWindow) {
-            iframe.contentWindow.focus()
-            iframe.contentWindow.print()
+    try {
+        // Try to copy the HTML version for formatted paste, or fallback to plain text if needed
+        const blob = new Blob([generatedResumeHtml.value], { type: 'text/html' })
+        const data = [new ClipboardItem({ 'text/html': blob, 'text/plain': new Blob([generatedResume.value], { type: 'text/plain' }) })]
+        await navigator.clipboard.write(data)
+        showToast('Formatted resume copied to clipboard!', 'success')
+    } catch (err) {
+        // Fallback to plain text markdown
+        try {
+            await navigator.clipboard.writeText(generatedResume.value)
+            showToast('Resume Markdown copied to clipboard!', 'success')
+        } catch (innerErr) {
+            console.error('Copy failed:', innerErr)
+            showToast('Failed to copy. Please select and copy manually.', 'error')
         }
-        setTimeout(() => {
-            document.body.removeChild(iframe)
-            document.title = originalTitle
-        }, 1000)
-    }, 800)
+    }
 }
 
 const downloadDOC = () => {
     if (!generatedResumeHtml.value) return
 
     const fileName = `${getFilename()}.doc`
-
-    // Create Word-compatible HTML with standard styles
-    const header = `
+    const content = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' 
               xmlns:w='urn:schemas-microsoft-com:office:word' 
               xmlns='http://www.w3.org/TR/REC-html40'>
         <head>
             <meta charset='utf-8'>
             <title>Resume</title>
-            <!--[if gte mso 9]>
-            <xml>
-                <w:WordDocument>
-                    <w:View>Print</w:View>
-                    <w:Zoom>100</w:Zoom>
-                    <w:DoNotOptimizeForBrowser/>
-                </w:WordDocument>
-            </xml>
-            <![endif]-->
             <style>
-                @page {
-                    size: 8.5in 11in;
-                    margin: 0.75in 0.75in 0.75in 0.75in;
-                    mso-header-margin: 0.5in;
-                    mso-footer-margin: 0.5in;
-                    mso-paper-source: 0;
-                }
-                body { 
-                    font-family: 'Arial', 'Helvetica', sans-serif; 
-                    font-size: 10pt;
-                    line-height: 1.25;
-                    color: #1a202c;
-                }
-                h1 { font-size: 22pt; color: #1a365d; margin-bottom: 4pt; font-weight: bold; }
-                p { margin-top: 0; margin-bottom: 6pt; }
-                h2 { 
-                    font-size: 12pt; 
-                    color: #2b6cb0; 
-                    text-transform: uppercase; 
-                    border-bottom: 1pt solid #e2e8f0; 
-                    margin-top: 18pt; 
-                    margin-bottom: 8pt; 
-                    padding-bottom: 2pt;
-                    font-weight: bold;
-                }
-                h3 { font-size: 11pt; color: #1a202c; margin-top: 12pt; margin-bottom: 3pt; font-weight: bold; }
-                p, li { font-size: 10pt; color: #2d3748; margin-bottom: 4pt; }
-                ul { list-style-type: disc; margin-left: 25pt; margin-top: 0; }
-                li { margin-bottom: 2pt; }
-                strong { font-weight: bold; }
-                a { color: #2b6cb0; text-decoration: none; }
+                @page { size: 8.5in 11in; margin: 0.75in 0.75in 0.75in 0.75in; }
+                body { font-family: 'Arial', sans-serif; line-height: 1.4; color: #1a202c; }
+                ${getTemplateStyles(selectedTemplate.value, false)}
             </style>
         </head>
-        <body>`;
+        <body>
+            ${generatedResumeHtml.value}
+        </body>
+        </html>
+    `
 
-    const footer = "</body></html>";
-    const sourceHTML = header + generatedResumeHtml.value + footer;
+    const blob = new Blob([content], { type: 'application/msword' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.style.display = 'none'
+    link.href = url
+    link.download = fileName
 
-    const blob = new Blob(['\ufeff', sourceHTML], {
-        type: 'application/msword'
-    });
+    document.body.appendChild(link)
+    link.click()
 
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    setTimeout(() => {
+        document.body.removeChild(link)
+        URL.revokeObjectURL(url)
+    }, 100)
+
+    showToast('DOC download started!', 'success')
 }
 </script>
 
@@ -456,11 +415,14 @@ const downloadDOC = () => {
 
         <div class="resume-preview" v-if="generatedResume">
             <div class="preview-header">
-                <h2>Generated Resume</h2>
+                <h2>Tailored Resume Preview</h2>
                 <div class="preview-actions">
-                    <button @click="downloadPDF" class="btn btn-primary">Download PDF</button>
+                    <button @click="downloadPDF" class="btn btn-primary" title="Recommended for Mobile">Download
+                        PDF</button>
                     <button @click="downloadDOC" class="btn btn-secondary">Download DOC</button>
-                    <button @click="generatedResume = ''" class="btn btn-secondary">Create Another</button>
+                    <button @click="copyToClipboard" class="btn btn-secondary" title="Copy as Text">Copy
+                        Markdown</button>
+                    <button @click="generatedResume = ''" class="btn btn-secondary danger">Start Over</button>
                 </div>
             </div>
 
@@ -813,6 +775,8 @@ pre {
 .preview-actions {
     display: flex;
     gap: var(--space-4);
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .resume-paper {
@@ -881,9 +845,20 @@ pre {
     }
 
     .preview-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-2);
         width: 100%;
+    }
+
+    .preview-actions .btn {
+        width: 100%;
+        padding: var(--space-2.5) var(--space-2);
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
         justify-content: center;
-        flex-wrap: wrap;
+        text-align: center;
     }
 
     .resume-paper {
