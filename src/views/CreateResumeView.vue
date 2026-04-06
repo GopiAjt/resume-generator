@@ -68,6 +68,13 @@ const handleFileChange = async (event: Event) => {
     }
 }
 
+const formatResumeHtml = async (markdown: string) => {
+    let html = await marked(markdown) as string;
+    // Add resume-meta class to the first paragraph (usually contact info/summary) for robust styling
+    html = html.replace(/<p>(.*?)<\/p>/, '<p class="resume-meta">$1</p>');
+    return html;
+};
+
 const handleSubmit = async () => {
     if (!jobDescription.value.trim() || !extractedResumeText.value.trim()) return
 
@@ -84,10 +91,10 @@ const handleSubmit = async () => {
 
         if (typeof response === 'string') {
             generatedResume.value = response
-            generatedResumeHtml.value = (await marked(response)) as string
+            generatedResumeHtml.value = await formatResumeHtml(response)
         } else {
             generatedResume.value = response.resume_markdown
-            generatedResumeHtml.value = (await marked(response.resume_markdown)) as string
+            generatedResumeHtml.value = await formatResumeHtml(response.resume_markdown)
             originalAtsScore.value = response.original_ats_score
             atsScore.value = response.ats_score
             optimizationReport.value = response.optimization_report

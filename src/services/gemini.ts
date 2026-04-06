@@ -237,29 +237,42 @@ Job Description:
         }
 
         // Try to parse the cleaned text
-        try {
-            return JSON.parse(cleanedText);
-        } catch (initialParseError) {
-            // If it still fails, try to find the first '{' and last '}'
-            const startBracket = cleanedText.indexOf('{');
-            const endBracket = cleanedText.lastIndexOf('}');
-            if (startBracket !== -1 && endBracket !== -1) {
-                const jsonSubstring = cleanedText.substring(startBracket, endBracket + 1);
-                return JSON.parse(jsonSubstring);
+        // 2. Try to extract a balanced JSON object manually if direct parsing fails
+        const extractBalancedJson = (text: string) => {
+            const startIdx = text.indexOf('{');
+            if (startIdx === -1) return null;
+            
+            let count = 0;
+            for (let i = startIdx; i < text.length; i++) {
+                if (text[i] === '{') count++;
+                else if (text[i] === '}') count--;
+                
+                if (count === 0) {
+                    return text.substring(startIdx, i + 1);
+                }
             }
+            return null;
+        };
+
+        const jsonCandidate = extractBalancedJson(cleanedText) || cleanedText;
+
+        try {
+            return JSON.parse(jsonCandidate);
+        } catch (initialParseError) {
+            console.warn("JSON.parse failed on candidate, falling back to manual extraction", initialParseError);
             throw initialParseError;
         }
     } catch (e) {
-        console.error("Failed to parse JSON response:", text);
-        // Fallback for non-JSON responses
+        console.error("Failed to parse JSON response. Raw text:", text);
+        // Fallback for non-JSON responses or malformed output
         return { 
             resume_markdown: text, 
             original_ats_score: 0,
             ats_score: 0,
-            optimization_report: ["Failed to parse detailed report."]
+            optimization_report: ["Failed to parse the detailed report from the AI. The content might have been cut off or malformed."]
         };
     }
-  } catch (error) {
+} catch (error) {
     console.error("Error generating resume:", error);
     throw error;
   }

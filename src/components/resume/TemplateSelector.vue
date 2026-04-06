@@ -58,8 +58,9 @@ defineEmits<{
 
 .template-card.active {
     border-color: var(--color-primary);
-    background: hsla(var(--hue-primary), 80%, 60%, 0.05);
-    box-shadow: 0 0 0 1px var(--color-primary);
+    background: hsla(var(--hue-primary), 80%, 60%, 0.1);
+    box-shadow: 0 0 15px hsla(var(--hue-primary), 80%, 60%, 0.2);
+    border-width: 2px;
 }
 
 .template-icon {

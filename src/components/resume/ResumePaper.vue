@@ -29,15 +29,16 @@ defineExpose({
             #e2e8f0 calc(297mm - 1px),
             #e2e8f0 297mm);
     background-size: 100% 297mm;
-    color: #1a202c;
-    /* padding: 0.75in; Removed by user in latest update */
+    color: #1e293b;
+    padding: 2%;
+    /* User preference preserved */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     margin: 0 auto var(--space-10);
     width: 210mm;
     min-height: 297mm;
     height: auto;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
-    line-height: 1.4;
+    line-height: 1.5;
     text-align: left;
     box-sizing: border-box;
     transition: all var(--transition-base);
@@ -45,171 +46,256 @@ defineExpose({
     overflow-wrap: break-word;
 }
 
+/* Global Reset for Lists in Preview to Prevent Double Bullets */
+.resume-paper :deep(ul) {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 0 !important;
+}
+
+.resume-paper :deep(li) {
+    list-style: none !important;
+    position: relative;
+    padding-left: 1.4rem;
+    margin-bottom: 4pt;
+    line-height: 1.5;
+}
+
+.resume-paper :deep(p) {
+    margin: 0 0 6pt 0;
+}
+
+.resume-paper :deep(h1),
+.resume-paper :deep(h2),
+.resume-paper :deep(h3) {
+    margin: 0;
+    padding: 0;
+    color: #0f172a;
+    font-weight: 700;
+}
+
 /* Template Specific Content Styles */
+
+/* MODERN */
 .template-modern {
     font-family: 'Inter', sans-serif !important;
 }
 
 .template-modern :deep(h1) {
     font-size: 24pt;
-    color: #1a365d;
     font-weight: 800;
-    border: none;
+    color: #2563eb;
+    margin-bottom: 6pt;
+    letter-spacing: -0.02em;
+}
+
+.template-modern :deep(.resume-meta) {
+    font-size: 10pt;
+    color: #475569;
+    margin-bottom: 16pt;
+    font-weight: 500;
 }
 
 .template-modern :deep(h2) {
-    color: #2b6cb0;
-    border-bottom: 1.5px solid #e2e8f0;
+    font-size: 12pt;
+    font-weight: 700;
+    color: #2563eb;
     text-transform: uppercase;
+    border-bottom: 2px solid #2563eb;
+    padding-bottom: 4pt;
+    margin-top: 18pt;
+    margin-bottom: 8pt;
     letter-spacing: 0.05em;
-    margin-top: 24pt;
+}
+
+.template-modern :deep(h3) {
+    font-size: 11pt;
+    font-weight: 700;
+    margin-top: 10pt;
+    margin-bottom: 2pt;
 }
 
 .template-modern :deep(li::before) {
     content: "•";
-    color: #2b6cb0;
+    position: absolute;
+    left: 0;
+    color: #2563eb;
     font-weight: bold;
 }
 
+/* EXECUTIVE */
 .template-executive {
-    font-family: 'Times New Roman', Times, serif !important;
+    font-family: 'Georgia', serif !important;
 }
 
 .template-executive :deep(h1) {
     font-size: 26pt;
-    color: #000;
     text-align: center;
     font-weight: 400;
-    border: none;
+    margin-bottom: 6pt;
+    color: #4338ca;
 }
 
-.template-executive :deep(p:first-of-type) {
+.template-executive :deep(.resume-meta) {
     text-align: center;
-    border-bottom: 1px solid #333;
-    padding-bottom: 10pt;
-    margin-bottom: 25pt;
+    font-size: 10pt;
+    border-bottom: 2px solid #4338ca;
+    padding-bottom: 8pt;
+    margin-bottom: 20pt;
+    color: #6366f1;
 }
 
 .template-executive :deep(h2) {
-    text-align: center;
-    border-top: 1px solid #111;
-    border-bottom: 1px solid #111;
-    color: #111;
-    padding: 4pt 0;
+    font-size: 13pt;
     text-transform: uppercase;
-    margin-top: 22pt;
+    text-align: center;
+    border-top: 2px solid #4338ca;
+    border-bottom: 1px solid #4338ca;
+    padding: 4pt 0;
+    margin-top: 20pt;
+    margin-bottom: 10pt;
+    font-weight: 700;
+    color: #4338ca;
+}
+
+.template-executive :deep(h3) {
+    font-size: 11.5pt;
+    font-weight: 700;
+    margin-top: 12pt;
+    margin-bottom: 3pt;
+    color: #1a202c;
 }
 
 .template-executive :deep(li::before) {
     content: "▪";
-    color: #000;
+    position: absolute;
+    left: 0;
+    color: #4338ca;
 }
 
+/* MINIMAL */
 .template-minimal {
-    font-family: 'Helvetica', 'Arial', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
 }
 
 .template-minimal :deep(h1) {
     font-size: 22pt;
     font-weight: 300;
-    color: #111;
-    border: none;
+    margin-bottom: 4pt;
+    color: #059669;
 }
 
-.template-minimal :deep(p:first-of-type) {
+.template-minimal :deep(.resume-meta) {
+    font-size: 9pt;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: #718096;
-    margin-bottom: 30pt;
+    color: #10b981;
+    margin-bottom: 24pt;
 }
 
 .template-minimal :deep(h2) {
-    border-bottom: none;
+    font-size: 10pt;
+    font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.2em;
-    font-size: 10pt;
-    color: #111;
-    margin-top: 30pt;
+    margin-top: 24pt;
+    margin-bottom: 8pt;
+    color: #059669;
+    border-left: 4px solid #059669;
+    padding-left: 10pt;
+}
+
+.template-minimal :deep(h3) {
+    font-size: 11pt;
     font-weight: 600;
+    margin-top: 12pt;
+    margin-bottom: 3pt;
+    color: #065f46;
 }
 
 .template-minimal :deep(li::before) {
     content: "—";
-    color: #cbd5e0;
+    position: absolute;
+    left: 0;
+    color: #10b981;
+    font-weight: 800;
 }
 
+/* TECHNICAL */
 .template-technical {
-    font-family: 'JetBrains Mono', 'Fira Code', 'Menlo', 'Monaco', 'Courier New', monospace !important;
-    font-size: clamp(8pt, 1.25vw, 9.5pt) !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 9.5pt !important;
 }
 
 .template-technical :deep(h1) {
-    border-left: clamp(4px, 1.5vw, 8px) solid #000;
-    padding: clamp(6pt, 1.5vw, 10pt) clamp(12pt, 3vw, 20pt);
-    font-size: clamp(16pt, 4vw, 22pt);
-    background: #f7fafc;
-    margin-bottom: clamp(4pt, 1vw, 8pt);
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+    font-size: 22pt;
     font-weight: 800;
+    border-left: 6px solid #7c3aed;
+    padding: 6pt 12pt;
+    background: #f5f3ff;
+    margin-bottom: 6pt;
+    color: #5b21b6;
 }
 
-.template-technical :deep(p:first-of-type) {
-    background: #1a202c;
+.template-technical :deep(.resume-meta) {
+    font-size: 9pt;
+    background: #7c3aed;
     color: #fff;
-    padding: 10pt clamp(12pt, 3vw, 20pt);
-    font-size: clamp(8.5pt, 1vw, 9.5pt);
-    border-radius: 0 0 12px 12px;
-    margin-bottom: 25pt;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12pt;
-    line-height: 1.4;
+    padding: 8pt 12pt;
+    margin-bottom: 20pt;
+    border-radius: 0 0 10px 10px;
+    font-weight: 600;
 }
 
 .template-technical :deep(h2) {
-    border-bottom: none;
-    background: #edf2f7;
-    padding: 6pt clamp(10pt, 2vw, 15pt);
-    font-size: clamp(10pt, 1.5vw, 11pt);
-    color: #000;
-    border-radius: 4px;
-    margin-top: clamp(14pt, 2.5vw, 18pt);
+    font-size: 11pt;
     font-weight: 800;
+    background: #f3f4f6;
+    padding: 5pt 10pt;
+    margin-top: 18pt;
+    margin-bottom: 8pt;
+    border-radius: 4px;
+    color: #4c1d95;
+    border-right: 4px solid #7c3aed;
 }
 
-.template-technical :deep(li) {
-    position: relative;
-    padding-left: 1.25rem;
-    margin-bottom: 4pt;
+.template-technical :deep(h3) {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #7c3aed;
+    border-bottom: 2px dashed #ddd6fe;
+    display: inline-block;
+    margin-top: 10pt;
+    margin-bottom: 3pt;
 }
 
 .template-technical :deep(li::before) {
     content: "::";
-    color: #718096;
-    font-weight: 800;
     position: absolute;
     left: 0;
-    font-size: 0.9em;
+    color: #7c3aed;
+    font-weight: 800;
 }
 
-/* Technical Template Mobile Overrides */
+/* Mobile Adjustments for Preview */
 @media (max-width: 768px) {
+    .resume-paper {
+        width: 100%;
+        max-width: 100%;
+        min-height: auto;
+        padding: 2%;
+        /* User preference preserved */
+        box-shadow: none;
+        border: 1px solid var(--color-border);
+    }
+
     .template-technical :deep(h1) {
         border-left-width: 4px;
+        font-size: 18pt;
     }
 
-    .template-technical :deep(p:first-of-type) {
-        flex-direction: column;
-        gap: 4pt;
+    .template-technical :deep(.resume-meta) {
         border-radius: 4px;
-    }
-
-    .template-technical :deep(h2) {
-        margin-left: calc(-1 * var(--space-6));
-        margin-right: calc(-1 * var(--space-6));
-        padding-left: var(--space-6);
-        border-radius: 0;
     }
 }
 
@@ -251,16 +337,5 @@ defineExpose({
     background: transparent;
     padding: 0;
     margin: 0;
-}
-
-@media (max-width: 768px) {
-    .resume-paper {
-        width: 100%;
-        max-width: 100%;
-        min-height: auto;
-        padding: var(--space-6);
-        box-shadow: none;
-        border: 1px solid var(--color-border);
-    }
 }
 </style>
