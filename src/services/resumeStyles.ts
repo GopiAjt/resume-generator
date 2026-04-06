@@ -17,8 +17,8 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
     const baseCSS = `
         :root {
             --resume-primary: #2563eb;
-            --resume-text: #1e293b;
-            --resume-heading: #0f172a;
+            --resume-text: #0f172a; /* Slate 900 - High Visibility Primary Text */
+            --resume-heading: #020617; /* Slate 950 - Maximum Contrast Header */
             --resume-border-color: #e2e8f0;
         }
 

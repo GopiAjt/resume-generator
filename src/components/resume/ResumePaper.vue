@@ -29,7 +29,8 @@ defineExpose({
             #e2e8f0 calc(297mm - 1px),
             #e2e8f0 297mm);
     background-size: 100% 297mm;
-    color: #1e293b;
+    color: #0f172a;
+    /* Slate 900 - High Visibility Primary Text */
     padding: 2%;
     /* User preference preserved */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
