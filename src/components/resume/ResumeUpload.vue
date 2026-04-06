@@ -52,7 +52,7 @@ const handleFileChange = (event: Event) => {
                     <div class="upload-text">
                         <span v-if="!resumeFile" class="main-text">Choose your resume</span>
                         <span v-else class="main-text file-name">{{ resumeFile.name }}</span>
-                        <span class="sub-text">PDF or DOCX (Max 10MB)</span>
+                        <span class="sub-text">PDF or DOCX (Max 5MB)</span>
                     </div>
                 </label>
                 <input id="resume-upload" type="file" @change="handleFileChange" accept=".pdf,.docx"

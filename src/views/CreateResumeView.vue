@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { generateResume } from '@/services/gemini'
 
 // Components
@@ -16,6 +17,11 @@ import OptimizationReport from '@/components/resume/OptimizationReport.vue'
 import { useResumeProcessor } from '@/composables/useResumeProcessor'
 import { useResumeExporter } from '@/composables/useResumeExporter'
 import { getScoreClass } from '@/utils/resumeUtils'
+
+// Constants
+const MAX_FILE_SIZE_MB = 5
+const MAX_JD_LENGTH = 10000
+const MAX_RESUME_LENGTH = 20000
 
 // State
 const jobDescription = ref('')
@@ -50,6 +56,10 @@ const showToast = (message: string, type = 'error') => {
 }
 
 const handleFormSubmit = (text: string) => {
+    if (text.length > MAX_RESUME_LENGTH) {
+        showToast(`Your resume text is too long! Please limit it to ${MAX_RESUME_LENGTH} characters.`, 'error')
+        return
+    }
     extractedResumeText.value = text
     resumeFile.value = null
     showModal.value = false
@@ -59,9 +69,26 @@ const handleFormSubmit = (text: string) => {
 const handleFileChange = async (event: Event) => {
     const target = event.target as HTMLInputElement
     if (target.files && target.files[0]) {
-        resumeFile.value = target.files[0]
+        const file = target.files[0]
+        
+        // 5MB File Size Validation
+        if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+            showToast(`File is too large! Maximum size is ${MAX_FILE_SIZE_MB}MB.`, 'error')
+            target.value = '' // Clear input
+            return
+        }
+
+        resumeFile.value = file
         try {
             await extractTextFromFile(resumeFile.value)
+            
+            // Check extracted text length
+            if (extractedResumeText.value.length > MAX_RESUME_LENGTH) {
+                showToast(`Extracted resume text is too long! Please use a more concise resume.`, 'error')
+                extractedResumeText.value = ''
+                resumeFile.value = null
+                target.value = ''
+            }
         } catch (err) {
             errorMessage.value = extractionError.value
         }
@@ -69,14 +96,34 @@ const handleFileChange = async (event: Event) => {
 }
 
 const formatResumeHtml = async (markdown: string) => {
-    let html = await marked(markdown) as string;
+    let rawHtml = await marked(markdown) as string;
+    
+    // XSS Sanitization
+    const sanitizedHtml = DOMPurify.sanitize(rawHtml);
+    
     // Add resume-meta class to the first paragraph (usually contact info/summary) for robust styling
-    html = html.replace(/<p>(.*?)<\/p>/, '<p class="resume-meta">$1</p>');
-    return html;
+    const finalHtml = sanitizedHtml.replace(/<p>(.*?)<\/p>/, '<p class="resume-meta">$1</p>');
+    return finalHtml;
 };
 
+const validateInputs = () => {
+    if (!jobDescription.value.trim()) {
+        showToast('Please enter a target job description.', 'error')
+        return false
+    }
+    if (jobDescription.value.length > MAX_JD_LENGTH) {
+        showToast(`Job description is too long! Please limit it to ${MAX_JD_LENGTH} characters.`, 'error')
+        return false
+    }
+    if (!extractedResumeText.value.trim()) {
+        showToast('Please upload your resume or enter your details manually.', 'error')
+        return false
+    }
+    return true
+}
+
 const handleSubmit = async () => {
-    if (!jobDescription.value.trim() || !extractedResumeText.value.trim()) return
+    if (!validateInputs()) return
 
     isGenerating.value = true
     errorMessage.value = ''
