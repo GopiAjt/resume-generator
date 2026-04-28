@@ -129,7 +129,7 @@ const handleFileChange = async (event: Event) => {
 }
 
 const formatResumeHtml = async (markdown: string) => {
-    let rawHtml = await marked(markdown) as string;
+    const rawHtml = await marked(markdown) as string;
 
     // XSS Sanitization
     const sanitizedHtml = DOMPurify.sanitize(rawHtml);

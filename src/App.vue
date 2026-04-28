@@ -12,7 +12,6 @@ const goHome = () => router.push('/');
       </div>
       <nav aria-label="Main navigation">
         <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
       </nav>
     </div>
   </header>
