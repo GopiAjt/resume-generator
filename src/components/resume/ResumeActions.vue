@@ -1,14 +1,29 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+
 defineProps<{
     isGenerating: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
     (e: 'download-pdf'): void;
     (e: 'download-doc'): void;
     (e: 'copy-markdown'): void;
     (e: 'start-over'): void;
 }>();
+
+const confirmingStartOver = ref(false);
+
+const handleStartOver = () => {
+    if (confirmingStartOver.value) {
+        emit('start-over');
+        confirmingStartOver.value = false;
+    } else {
+        confirmingStartOver.value = true;
+        // Auto-cancel after 4 seconds if user doesn't confirm
+        setTimeout(() => { confirmingStartOver.value = false; }, 4000);
+    }
+};
 </script>
 
 <template>
@@ -17,7 +32,10 @@ defineEmits<{
             PDF</button>
         <button @click="$emit('download-doc')" class="btn btn-secondary">Download DOC</button>
         <button @click="$emit('copy-markdown')" class="btn btn-secondary" title="Copy as Text">Copy Markdown</button>
-        <button @click="$emit('start-over')" class="btn btn-secondary danger">Start Over</button>
+        <button @click="handleStartOver" class="btn btn-secondary"
+            :class="confirmingStartOver ? 'danger confirming' : 'danger'">
+            {{ confirmingStartOver ? 'Click again to confirm' : 'Start Over' }}
+        </button>
     </div>
 </template>
 
@@ -79,6 +97,23 @@ defineEmits<{
     border-color: #dc2626;
 }
 
+.btn-secondary.danger.confirming {
+    background: hsla(40, 90%, 50%, 0.1);
+    border-color: #d97706;
+    color: #d97706;
+    animation: pulse-warning 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-warning {
+    from {
+        box-shadow: 0 0 0 0 hsla(40, 90%, 50%, 0.3);
+    }
+
+    to {
+        box-shadow: 0 0 0 6px hsla(40, 90%, 50%, 0);
+    }
+}
+
 @media (max-width: 640px) {
     .preview-actions {
         display: grid;
@@ -89,7 +124,7 @@ defineEmits<{
 
     .preview-actions .btn {
         width: 100%;
-        padding: var(--space-2.5) var(--space-2);
+        padding: var(--space-3) var(--space-2);
         font-size: 0.85rem;
         margin: 0;
     }

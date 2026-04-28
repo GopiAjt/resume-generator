@@ -3,6 +3,8 @@ import { ref, reactive } from 'vue'
 
 const emit = defineEmits(['close', 'submit'])
 
+const validationError = ref('')
+
 const form = reactive({
     name: '',
     email: '',
@@ -48,6 +50,16 @@ const removeEducation = (index: number) => {
 }
 
 const handleSubmit = () => {
+    validationError.value = ''
+
+    if (!form.name.trim()) {
+        validationError.value = 'Full Name is required.'
+        return
+    }
+    if (!form.experience[0]?.company.trim() && !form.experience[0]?.role.trim()) {
+        validationError.value = 'Please add at least one work experience entry.'
+        return
+    }
     // Format the form as a Reference Resume text
     let formattedText = `# ${form.name}\n`
     formattedText += `${form.location} | ${form.email} | ${form.phone}\n`
@@ -85,6 +97,10 @@ const handleSubmit = () => {
 
             <div class="modal-body">
                 <p class="form-hint">Fill in your details below to generate a reference resume for tailoring.</p>
+
+                <div v-if="validationError" class="validation-error">
+                    <span>⚠️</span> {{ validationError }}
+                </div>
 
                 <form @submit.prevent="handleSubmit">
                     <!-- Personal Info -->
@@ -302,6 +318,20 @@ const handleSubmit = () => {
     font-size: 0.95rem;
 }
 
+.validation-error {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: hsla(var(--hue-danger), 80%, 55%, 0.1);
+    border: 1px solid hsla(var(--hue-danger), 80%, 55%, 0.3);
+    color: var(--color-danger);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: var(--space-4);
+}
+
 .form-section {
     margin-bottom: var(--space-8);
 }
@@ -351,7 +381,7 @@ textarea {
     padding: var(--space-3);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    background: var(--color-background);
+    background: var(--color-bg);
     color: var(--color-text);
     font-size: 1rem;
 }

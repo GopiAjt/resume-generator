@@ -226,8 +226,6 @@ Job Description:
     const text = response.text();
 
     try {
-        console.log("Raw response:", text);
-        
         // Clean the response text: 
         // 1. Remove markdown code blocks if present (```json or ```)
         // 2. Remove leading/trailing whitespace

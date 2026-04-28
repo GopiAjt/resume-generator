@@ -34,7 +34,7 @@ label {
 textarea {
     width: 100%;
     padding: var(--space-4);
-    background: var(--color-background);
+    background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     color: var(--color-text);

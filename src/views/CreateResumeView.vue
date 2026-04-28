@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { generateResume } from '@/services/gemini'
@@ -37,7 +37,7 @@ const optimizationReport = ref<string[]>([])
 const errorMessage = ref('')
 const selectedTemplate = ref('modern')
 
-const resumePaperRef = ref<any>(null)
+const resumePaperRef = ref<InstanceType<typeof ResumePaper> | null>(null)
 const toast = ref({
     show: false,
     message: '',
@@ -47,6 +47,35 @@ const toast = ref({
 // Logic
 const { isExtracting, extractedResumeText, extractTextFromFile, errorMessage: extractionError } = useResumeProcessor()
 const { downloadPDF, downloadDOC, copyToClipboard } = useResumeExporter()
+
+// Loading step cycler
+const LOADING_STEPS = [
+    'Analyzing job description...',
+    'Identifying ATS keywords...',
+    'Matching your experience...',
+    'Crafting tailored bullet points...',
+    'Formatting your resume...',
+]
+const loadingStep = ref(LOADING_STEPS[0])
+let loadingInterval: ReturnType<typeof setInterval> | null = null
+
+const startLoadingCycle = () => {
+    let i = 0
+    loadingStep.value = LOADING_STEPS[0]
+    loadingInterval = setInterval(() => {
+        i = (i + 1) % LOADING_STEPS.length
+        loadingStep.value = LOADING_STEPS[i]
+    }, 3500)
+}
+
+const stopLoadingCycle = () => {
+    if (loadingInterval) {
+        clearInterval(loadingInterval)
+        loadingInterval = null
+    }
+}
+
+onUnmounted(stopLoadingCycle)
 
 const showToast = (message: string, type = 'error') => {
     toast.value = { show: true, message, type }
@@ -70,7 +99,7 @@ const handleFileChange = async (event: Event) => {
     const target = event.target as HTMLInputElement
     if (target.files && target.files[0]) {
         const file = target.files[0]
-        
+
         // 5MB File Size Validation
         if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
             showToast(`File is too large! Maximum size is ${MAX_FILE_SIZE_MB}MB.`, 'error')
@@ -81,7 +110,7 @@ const handleFileChange = async (event: Event) => {
         resumeFile.value = file
         try {
             await extractTextFromFile(resumeFile.value)
-            
+
             // Check extracted text length
             if (extractedResumeText.value.length > MAX_RESUME_LENGTH) {
                 showToast(`Extracted resume text is too long! Please use a more concise resume.`, 'error')
@@ -89,18 +118,21 @@ const handleFileChange = async (event: Event) => {
                 resumeFile.value = null
                 target.value = ''
             }
-        } catch (err) {
-            errorMessage.value = extractionError.value
+        } catch (err: any) {
+            const msg = err?.message || extractionError.value || 'Failed to read the resume file.'
+            showToast(msg, 'error')
+            resumeFile.value = null
+            target.value = ''
         }
     }
 }
 
 const formatResumeHtml = async (markdown: string) => {
     let rawHtml = await marked(markdown) as string;
-    
+
     // XSS Sanitization
     const sanitizedHtml = DOMPurify.sanitize(rawHtml);
-    
+
     // Add resume-meta class to the first paragraph (usually contact info/summary) for robust styling
     const finalHtml = sanitizedHtml.replace(/<p>(.*?)<\/p>/, '<p class="resume-meta">$1</p>');
     return finalHtml;
@@ -132,6 +164,7 @@ const handleSubmit = async () => {
     originalAtsScore.value = 0
     atsScore.value = 0
     optimizationReport.value = []
+    startLoadingCycle()
 
     try {
         const response = await generateResume(jobDescription.value, extractedResumeText.value)
@@ -155,12 +188,13 @@ const handleSubmit = async () => {
             errorMessage.value = msg || 'Failed to generate resume. Please check your API key and try again.'
         }
     } finally {
+        stopLoadingCycle()
         isGenerating.value = false
     }
 }
 
 const onDownloadPDF = () => {
-    const container = resumePaperRef.value?.resumeContainer
+    const container = resumePaperRef.value?.resumeContainer ?? null
     downloadPDF(
         container,
         generatedResume.value,
@@ -226,7 +260,10 @@ const onCopyMarkdown = () => {
             <div class="actions">
                 <button @click="handleSubmit" class="btn btn-primary"
                     :disabled="!jobDescription.trim() || !extractedResumeText.trim() || isGenerating || isExtracting">
-                    <span v-if="isGenerating">Optimizing Your Resume...</span>
+                    <span v-if="isGenerating" class="loading-step-text">
+                        <span class="btn-spinner"></span>
+                        {{ loadingStep }}
+                    </span>
                     <span v-else>Optimize Resume</span>
                 </button>
             </div>
@@ -304,6 +341,28 @@ const onCopyMarkdown = () => {
 .actions {
     display: flex;
     justify-content: flex-end;
+}
+
+.loading-step-text {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.btn-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: btn-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes btn-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .btn-primary {

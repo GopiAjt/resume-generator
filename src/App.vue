@@ -1,20 +1,14 @@
-<script lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-
-export default {
-  methods: {
-    home_link() {
-      this.$router.push('/');
-    }
-  }
-};
+<script setup lang="ts">
+import { useRouter } from 'vue-router';
+const router = useRouter();
+const goHome = () => router.push('/');
 </script>
 
 <template>
   <header>
     <div class="container navbar">
       <div class="logo">
-        <span class="logo-text" @click="home_link">ResumeGen</span>
+        <span class="logo-text" @click="goHome">ResumeGen</span>
       </div>
       <nav>
         <RouterLink to="/">Home</RouterLink>
@@ -33,7 +27,7 @@ export default {
 
   <footer>
     <div class="container">
-      <p style="font-size: smaller;">&copy; 2024 Resume Optimizer. All rights reserved.</p>
+      <p style="font-size: smaller;">&copy; {{ new Date().getFullYear() }} ResumeGen. All rights reserved.</p>
     </div>
   </footer>
 </template>
