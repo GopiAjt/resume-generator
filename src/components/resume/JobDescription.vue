@@ -15,7 +15,7 @@ defineEmits<{
         <textarea id="job-description" :value="modelValue"
             @input="$emit('update:modelValue', ($event.target as HTMLTextAreaElement).value)"
             placeholder="Paste the job description here to optimize your resume..." rows="10"
-            :disabled="disabled"></textarea>
+            :disabled="disabled" aria-describedby="job-description-help"></textarea>
     </div>
 </template>
 

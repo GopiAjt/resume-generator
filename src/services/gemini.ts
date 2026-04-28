@@ -1,9 +1,10 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { logger } from '@/utils/logger';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 if (!API_KEY) {
-  console.error("VITE_GEMINI_API_KEY is not set in environment variables.");
+  logger.error("VITE_GEMINI_API_KEY is not set in environment variables.");
 }
 
 const genAI = new GoogleGenerativeAI(API_KEY);
@@ -257,21 +258,21 @@ Job Description:
         try {
             return JSON.parse(jsonCandidate);
         } catch (initialParseError) {
-            console.warn("JSON.parse failed on candidate, falling back to manual extraction", initialParseError);
+            logger.warn("JSON.parse failed on candidate, falling back to manual extraction", initialParseError);
             throw initialParseError;
         }
     } catch (e) {
-        console.error("Failed to parse JSON response. Raw text:", text);
+        logger.error("Failed to parse JSON response. Raw text:", text);
         // Fallback for non-JSON responses or malformed output
-        return { 
-            resume_markdown: text, 
+        return {
+            resume_markdown: text,
             original_ats_score: 0,
             ats_score: 0,
             optimization_report: ["Failed to parse the detailed report from the AI. The content might have been cut off or malformed."]
         };
     }
 } catch (error) {
-    console.error("Error generating resume:", error);
+    logger.error("Error generating resume:", error);
     throw error;
   }
 };

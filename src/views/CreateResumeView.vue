@@ -3,6 +3,7 @@ import { ref, onUnmounted } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { generateResume } from '@/services/gemini'
+import { logger } from '@/utils/logger'
 
 // Components
 import ResumeDetailFormModal from '@/components/ResumeDetailFormModal.vue'
@@ -180,7 +181,7 @@ const handleSubmit = async () => {
             optimizationReport.value = response.optimization_report
         }
     } catch (error: any) {
-        console.error('Failed to generate resume:', error)
+        logger.error('Failed to generate resume:', error)
         const msg = error.message || ''
         if (msg.includes('503') || msg.toLowerCase().includes('high demand')) {
             showToast('Gemini is currently under high demand. Please wait a few moments and try again!', 'warning')
@@ -229,14 +230,14 @@ const onCopyMarkdown = () => {
     <div class="create-resume container fade-in">
         <!-- Toast Notification -->
         <Transition name="toast">
-            <div v-if="toast.show" class="toast-notification" :class="toast.type">
+            <div v-if="toast.show" class="toast-notification" :class="toast.type" role="alert" aria-live="polite">
                 <div class="toast-content">
-                    <span v-if="toast.type === 'warning'" class="toast-icon">⚠️</span>
-                    <span v-else-if="toast.type === 'success'" class="toast-icon">✅</span>
-                    <span v-else class="toast-icon">❌</span>
+                    <span v-if="toast.type === 'warning'" class="toast-icon" aria-hidden="true">⚠️</span>
+                    <span v-else-if="toast.type === 'success'" class="toast-icon" aria-hidden="true">✅</span>
+                    <span v-else class="toast-icon" aria-hidden="true">❌</span>
                     <p>{{ toast.message }}</p>
                 </div>
-                <button @click="toast.show = false" class="toast-close">&times;</button>
+                <button @click="toast.show = false" class="toast-close" aria-label="Close notification">&times;</button>
             </div>
         </Transition>
 

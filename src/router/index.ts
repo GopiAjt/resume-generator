@@ -22,6 +22,16 @@ const router = createRouter({
       name: 'create-resume',
       component: () => import('../views/CreateResumeView.vue'),
     },
+    {
+      path: '/privacy',
+      name: 'privacy',
+      component: () => import('../views/PrivacyPolicyView.vue'),
+    },
+    {
+      path: '/terms',
+      name: 'terms',
+      component: () => import('../views/TermsOfServiceView.vue'),
+    },
   ],
 })
 

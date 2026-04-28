@@ -8,9 +8,9 @@ const goHome = () => router.push('/');
   <header>
     <div class="container navbar">
       <div class="logo">
-        <span class="logo-text" @click="goHome">ResumeGen</span>
+        <span class="logo-text" @click="goHome" role="button" tabindex="0" aria-label="Go to home page">ResumeGen</span>
       </div>
-      <nav>
+      <nav aria-label="Main navigation">
         <RouterLink to="/">Home</RouterLink>
         <RouterLink to="/about">About</RouterLink>
       </nav>
@@ -28,6 +28,10 @@ const goHome = () => router.push('/');
   <footer>
     <div class="container">
       <p style="font-size: smaller;">&copy; {{ new Date().getFullYear() }} ResumeGen. All rights reserved.</p>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <RouterLink to="/privacy">Privacy Policy</RouterLink>
+        <RouterLink to="/terms">Terms of Service</RouterLink>
+      </nav>
     </div>
   </footer>
 </template>
@@ -92,6 +96,24 @@ footer {
   text-align: center;
   border-top: 1px solid var(--color-border);
   background: var(--color-surface);
+}
+
+.footer-nav {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-6);
+  margin-top: var(--space-4);
+}
+
+.footer-nav a {
+  text-decoration: none;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+  transition: color var(--transition-fast);
+}
+
+.footer-nav a:hover {
+  color: var(--color-primary);
 }
 
 /* Page Transition */

@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
+import { logger } from '@/utils/logger';
 
 // Setup PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
@@ -45,7 +46,7 @@ export function useResumeProcessor() {
                 throw new Error('Failed to extract text from the file. The file might be empty or scanned as an image.');
             }
         } catch (error: any) {
-            console.error('Text extraction failed:', error);
+            logger.error('Text extraction failed:', error);
             errorMessage.value = error.message || 'Failed to read the resume file.';
             throw error;
         } finally {

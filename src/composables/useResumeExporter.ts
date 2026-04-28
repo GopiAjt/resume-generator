@@ -2,6 +2,7 @@
 import html2pdf from 'html2pdf.js';
 import { getTemplateStyles } from '@/services/resumeStyles';
 import { getFilename } from '@/utils/resumeUtils';
+import { logger } from '@/utils/logger';
 
 export function useResumeExporter() {
     const downloadPDF = async (
@@ -43,7 +44,7 @@ export function useResumeExporter() {
             await html2pdf().set(opt).from(resumeContainer).save();
             onSuccess('PDF downloaded successfully!');
         } catch (error) {
-            console.error('PDF generation failed:', error);
+            logger.error('PDF generation failed:', error);
             onError('Failed to generate PDF. Click "Copy Markdown" if needed.');
         } finally {
             resumeContainer.classList.remove('is-printing');
@@ -118,7 +119,7 @@ export function useResumeExporter() {
                 await navigator.clipboard.writeText(generatedResumeMarkdown);
                 onSuccess('Resume Markdown copied to clipboard!');
             } catch (innerErr) {
-                console.error('Copy failed:', innerErr);
+                logger.error('Copy failed:', innerErr);
                 onError('Failed to copy. Please select and copy manually.');
             }
         }

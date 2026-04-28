@@ -26,15 +26,17 @@ const handleFileChange = (event: Event) => {
             <label for="company-name">Company Name (Optional)</label>
             <input id="company-name" :value="companyName"
                 @input="emit('update:companyName', ($event.target as HTMLInputElement).value)" type="text"
-                placeholder="e.g. Google, Meta, etc." :disabled="isGenerating" class="company-input" />
+                placeholder="e.g. Google, Meta, etc." :disabled="isGenerating" class="company-input"
+                aria-describedby="company-name-help" />
         </div>
 
         <div class="form-group">
             <label for="resume-upload">Upload Current Resume (PDF/DOCX)</label>
             <div class="file-upload-wrapper">
                 <label for="resume-upload" class="file-upload-label"
-                    :class="{ 'disabled': isGenerating || isExtracting }">
-                    <div class="upload-icon">
+                    :class="{ 'disabled': isGenerating || isExtracting }"
+                    :aria-disabled="isGenerating || isExtracting">
+                    <div class="upload-icon" aria-hidden="true">
                         <svg v-if="!resumeFile" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                             stroke-linecap="round" stroke-linejoin="round">
@@ -56,7 +58,8 @@ const handleFileChange = (event: Event) => {
                     </div>
                 </label>
                 <input id="resume-upload" type="file" @change="handleFileChange" accept=".pdf,.docx"
-                    :disabled="isGenerating || isExtracting" class="file-input-hidden" />
+                    :disabled="isGenerating || isExtracting" class="file-input-hidden"
+                    aria-label="Upload resume file" />
 
                 <div v-if="isExtracting" class="extracting-status">
                     <span class="spinner"></span>
@@ -69,9 +72,9 @@ const handleFileChange = (event: Event) => {
                     </div>
                 </Transition>
             </div>
-            <div class="form-help">
+            <div class="form-help" id="company-name-help">
                 <p>Don't have a resume to upload? <button type="button" class="btn-link"
-                        @click="emit('manual-entry')">Provide your details manually</button></p>
+                        @click="emit('manual-entry')" aria-label="Enter resume details manually">Provide your details manually</button></p>
             </div>
         </div>
     </div>
