@@ -6,48 +6,81 @@ import { logger } from '@/utils/logger';
 
 export function useResumeExporter() {
     const downloadPDF = async (
-        resumeContainer: HTMLElement | null, 
-        generatedResumeMarkdown: string, 
-        companyName: string, 
+        resumeContainer: HTMLElement | null,
+        generatedResumeMarkdown: string,
+        companyName: string,
         onProgress: (msg: string) => void,
         onSuccess: (msg: string) => void,
         onError: (msg: string) => void
     ) => {
         if (!resumeContainer) return;
-        
-        const fileName = `${getFilename(generatedResumeMarkdown, companyName)}.pdf`;
-        
-        // Temporary style overrides to remove borders and shadows for clean capture
-        resumeContainer.classList.add('is-printing');
 
-        const opt = {
-            margin: 10, // Applies even margin to EVERY page
-            filename: fileName,
-            image: { type: 'jpeg' as const, quality: 0.98 },
-            html2canvas: { 
-                scale: 2.5, 
-                useCORS: true,
-                letterRendering: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            },
-            jsPDF: { 
-                unit: 'mm', 
-                format: 'a4', 
-                orientation: 'portrait' as const 
-            },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        };
+        const fileName = `${getFilename(generatedResumeMarkdown, companyName)}.pdf`;
 
         try {
-            onProgress('Generating clean PDF... Please wait.');
-            await html2pdf().set(opt).from(resumeContainer).save();
-            onSuccess('PDF downloaded successfully!');
+            onProgress('Generating ATS-friendly multi-page PDF...');
+
+            // Clone node to avoid mutating live UI
+            const clonedNode = resumeContainer.cloneNode(true) as HTMLElement;
+
+            // Apply print-specific styles
+            clonedNode.classList.add('pdf-export');
+
+            // Inject into hidden container
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'fixed';
+            wrapper.style.left = '-9999px';
+            wrapper.appendChild(clonedNode);
+            document.body.appendChild(wrapper);
+
+            const opt = {
+                margin: [10, 10, 10, 10] as [number, number, number, number],
+                filename: fileName,
+                image: { type: 'jpeg' as const, quality: 0.95 },
+                html2canvas: {
+                    scale: 1.5, // reduce memory pressure for multi-page
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: 'a4',
+                    orientation: 'portrait' as const
+                },
+                pagebreak: {
+                    mode: ['css'], // ONLY CSS-based control
+                    before: '.page-break',
+                    avoid: [
+                        '.section',
+                        '.experience-item',
+                        '.project-item',
+                        '.education-item'
+                    ]
+                }
+            };
+
+            await html2pdf()
+                .set(opt)
+                .from(clonedNode)
+                .toPdf()
+                .get('pdf')
+                .then((pdf: any) => {
+                    // Ensure proper metadata (helps ATS slightly)
+                    pdf.setProperties({
+                        title: fileName,
+                        subject: 'Resume',
+                        author: 'Candidate',
+                        keywords: 'resume, profile, cv'
+                    });
+                })
+                .save();
+
+            document.body.removeChild(wrapper);
+
+            onSuccess('Multi-page ATS-friendly PDF downloaded!');
         } catch (error) {
             logger.error('PDF generation failed:', error);
             onError('Failed to generate PDF. Click "Copy Markdown" if needed.');
-        } finally {
-            resumeContainer.classList.remove('is-printing');
         }
     };
 
@@ -60,18 +93,21 @@ export function useResumeExporter() {
     ) => {
         if (!generatedResumeHtml) return;
 
-        const fileName = `${getFilename(generatedResumeMarkdown, companyName)}.doc`;
+        // Save as .doc with Word XML namespaces — opens in Word without needing Office installed
+        const baseName = getFilename(generatedResumeMarkdown, companyName)
+        const fileName = `${baseName}.doc`;
+        const docTitle = companyName ? `Resume — ${companyName}` : 'Resume';
         const content = `
             <html xmlns:o='urn:schemas-microsoft-com:office:office' 
                   xmlns:w='urn:schemas-microsoft-com:office:word' 
                   xmlns='http://www.w3.org/TR/REC-html40'>
             <head>
                 <meta charset='utf-8'>
-                <title>Resume</title>
+                <title>${docTitle}</title>
                 <style>
-                    @page { size: 8.5in 11in; margin: 0.75in 0.75in 0.75in 0.75in; }
-                    body { font-family: 'Arial', sans-serif; line-height: 1.4; color: #1a202c; }
-                    ${getTemplateStyles(selectedTemplate, false)}
+                    @page { size: 21cm 29.7cm; margin: 1.27cm; }
+                    body { font-family: Arial, sans-serif; line-height: 1.4; color: #1a202c; }
+                    ${getTemplateStyles(selectedTemplate, true)}
                 </style>
             </head>
             <body>
@@ -95,7 +131,7 @@ export function useResumeExporter() {
             URL.revokeObjectURL(url);
         }, 100);
         
-        onSuccess('DOC download started!');
+        onSuccess('DOC downloaded successfully!');
     };
 
     const copyToClipboard = async (

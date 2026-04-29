@@ -69,10 +69,21 @@ defineExpose({
 .resume-paper :deep(h1),
 .resume-paper :deep(h2),
 .resume-paper :deep(h3) {
-    margin: 0;
     padding: 0;
     color: #0f172a;
     font-weight: 700;
+    /* NOTE: margin is intentionally NOT reset here so template-specific rules work */
+}
+
+/* Ensure bold/italic from AI markdown renders consistently in all templates */
+.resume-paper :deep(strong),
+.resume-paper :deep(b) {
+    font-weight: 700;
+}
+
+.resume-paper :deep(em),
+.resume-paper :deep(i) {
+    font-style: italic;
 }
 
 /* Template Specific Content Styles */
@@ -132,7 +143,7 @@ defineExpose({
 .template-executive :deep(h1) {
     font-size: 26pt;
     text-align: center;
-    font-weight: 400;
+    font-weight: 600;
     margin-bottom: 6pt;
     color: #4338ca;
 }
@@ -181,7 +192,7 @@ defineExpose({
 
 .template-minimal :deep(h1) {
     font-size: 22pt;
-    font-weight: 300;
+    font-weight: 500;
     margin-bottom: 4pt;
     color: #059669;
 }
@@ -195,7 +206,7 @@ defineExpose({
 }
 
 .template-minimal :deep(h2) {
-    font-size: 10pt;
+    font-size: 11.5pt;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.2em;
@@ -224,7 +235,7 @@ defineExpose({
 
 /* TECHNICAL */
 .template-technical {
-    font-family: 'JetBrains Mono', monospace !important;
+    font-family: 'JetBrains Mono', 'Courier New', monospace !important;
     font-size: 9.5pt !important;
 }
 
@@ -257,7 +268,7 @@ defineExpose({
     margin-bottom: 8pt;
     border-radius: 4px;
     color: #4c1d95;
-    border-right: 4px solid #7c3aed;
+    border-left: 4px solid #7c3aed;
 }
 
 .template-technical :deep(h3) {
@@ -265,17 +276,21 @@ defineExpose({
     font-weight: 700;
     color: #7c3aed;
     border-bottom: 2px dashed #ddd6fe;
-    display: inline-block;
+    display: block;
+    /* was inline-block — caused underline to only span word width */
     margin-top: 10pt;
     margin-bottom: 3pt;
+    padding-bottom: 2pt;
 }
 
 .template-technical :deep(li::before) {
-    content: "::";
+    content: "▶";
     position: absolute;
     left: 0;
     color: #7c3aed;
     font-weight: 800;
+    font-size: 7pt;
+    top: 2pt;
 }
 
 /* Mobile Adjustments for Preview */
@@ -300,21 +315,71 @@ defineExpose({
     }
 }
 
-/* Clean Printing Styles */
+/* Removes elements that only make sense in the browser, not in PDF output */
 .resume-paper.is-printing {
     width: 210mm !important;
-    padding: 0 !important;
-    /* Managed by PDF margins */
+    padding: 10mm 12mm !important;
+    /* matches the 10mm margin set in html2pdf config */
     margin: 0 !important;
     box-shadow: none !important;
     border: none !important;
     border-radius: 0 !important;
     background-image: none !important;
     transition: none !important;
+    font-size: 10pt !important;
+    line-height: 1.5 !important;
 }
 
+/* Do NOT constrain max-width in print — breaks Technical full-bleed headers */
 .resume-paper.is-printing :deep(*) {
-    max-width: 190mm !important;
+    box-shadow: none !important;
+}
+
+/* ATS-Friendly PDF Export Styles */
+.resume-paper.pdf-export {
+    width: 210mm;
+    padding: 10mm;
+    font-size: 11pt;
+    line-height: 1.4;
+    color: #000;
+    background: #fff;
+    margin: 0;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    background-image: none;
+}
+
+/* Prevent bad splits - avoid breaking inside these elements */
+.resume-paper.pdf-export :deep(h1),
+.resume-paper.pdf-export :deep(h2),
+.resume-paper.pdf-export :deep(h3) {
+    page-break-after: avoid;
+    break-after: avoid;
+}
+
+.resume-paper.pdf-export :deep(h1),
+.resume-paper.pdf-export :deep(h2),
+.resume-paper.pdf-export :deep(h3),
+.resume-paper.pdf-export :deep(p),
+.resume-paper.pdf-export :deep(li) {
+    orphans: 3;
+    widows: 3;
+}
+
+/* Force page breaks where needed */
+.resume-paper.pdf-export :deep(.page-break) {
+    page-break-before: always;
+    break-before: page;
+}
+
+/* Avoid breaking inside sections */
+.resume-paper.pdf-export :deep(.section),
+.resume-paper.pdf-export :deep(.experience-item),
+.resume-paper.pdf-export :deep(.project-item),
+.resume-paper.pdf-export :deep(.education-item) {
+    page-break-inside: avoid;
+    break-inside: avoid;
 }
 
 .resume-paper::after {
