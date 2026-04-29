@@ -30,7 +30,8 @@ const handleStartOver = () => {
     <div class="preview-actions">
         <button @click="$emit('download-pdf')" class="btn btn-primary" title="Recommended for Mobile">Download
             PDF</button>
-        <button @click="$emit('download-doc')" class="btn btn-secondary">Download DOC</button>
+        <button @click="$emit('download-doc')" class="btn btn-secondary" title="Opens in Word or Google Docs">Download
+            DOC</button>
         <button @click="$emit('copy-markdown')" class="btn btn-secondary" title="Copy as Text">Copy Markdown</button>
         <button @click="handleStartOver" class="btn btn-secondary"
             :class="confirmingStartOver ? 'danger confirming' : 'danger'">

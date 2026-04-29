@@ -34,11 +34,11 @@ export function useResumeExporter() {
             document.body.appendChild(wrapper);
 
             const opt = {
-                margin: [10, 10, 10, 10] as [number, number, number, number],
+                margin: [1, 1, 10, 1] as [number, number, number, number],
                 filename: fileName,
                 image: { type: 'jpeg' as const, quality: 0.95 },
                 html2canvas: {
-                    scale: 1.5, // reduce memory pressure for multi-page
+                    scale: 2, // reduce memory pressure for multi-page
                     useCORS: true,
                     backgroundColor: '#ffffff'
                 },
@@ -72,8 +72,8 @@ export function useResumeExporter() {
                         author: 'Candidate',
                         keywords: 'resume, profile, cv'
                     });
-                })
-                .save();
+                    pdf.save(fileName);
+                });
 
             document.body.removeChild(wrapper);
 

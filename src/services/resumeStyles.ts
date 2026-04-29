@@ -13,38 +13,34 @@ export const templates: Template[] = [
 ];
 
 export const getTemplateStyles = (templateId: string, isPrint = false) => {
-    // Global Base (Apply to ALL templates)
+    // Shared base — applies both in browser preview (via DOC export) and PDF
     const baseCSS = `
         :root {
             --resume-primary: #2563eb;
-            --resume-text: #0f172a; /* Slate 900 - High Visibility Primary Text */
-            --resume-heading: #020617; /* Slate 950 - Maximum Contrast Header */
+            --resume-text: #0f172a;
+            --resume-heading: #020617;
             --resume-border-color: #e2e8f0;
         }
 
-        /* Base Reset */
         * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
         body {
             margin: 0;
             padding: 0;
             font-size: 10pt;
-            line-height: 1.5;
+            line-height: ${isPrint ? '1.4' : '1.5'};
             color: var(--resume-text);
             font-family: 'Inter', Arial, sans-serif;
             background: #fff;
         }
 
         h1, h2, h3 {
-            margin: 0;
             padding: 0;
             color: var(--resume-heading);
             font-weight: 700;
         }
 
-        p {
-            margin: 0 0 6pt 0;
-        }
+        p { margin: 0 0 ${isPrint ? '4pt' : '6pt'} 0; }
 
         ul {
             margin: 0;
@@ -55,15 +51,20 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
         li {
             position: relative;
             padding-left: 1.4rem;
-            margin-bottom: 4pt;
+            margin-bottom: ${isPrint ? '3pt' : '4pt'};
             list-style: none !important;
         }
+
+        /* Ensure AI-generated bold keywords and italic text render correctly */
+        strong, b { font-weight: 700; }
+        em, i { font-style: italic; }
 
         a { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
 
         @media print {
             body { -webkit-print-color-adjust: exact; }
             h1, h2, h3, li { page-break-inside: avoid; break-inside: avoid; }
+            section, .section { page-break-inside: avoid; }
         }
     `;
 
@@ -119,7 +120,7 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
             h1 {
                 font-size: 26pt;
                 text-align: center;
-                font-weight: 400;
+                font-weight: 600;
                 margin-bottom: 6pt;
                 color: #4338ca;
             }
@@ -164,7 +165,7 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
         minimal: `
             h1 {
                 font-size: 22pt;
-                font-weight: 300;
+                font-weight: 500;
                 margin-bottom: 4pt;
                 color: #059669;
             }
@@ -178,7 +179,7 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
             }
 
             h2 {
-                font-size: 10pt;
+                font-size: 11.5pt;
                 font-weight: 800;
                 text-transform: uppercase;
                 letter-spacing: 0.2em;
@@ -207,7 +208,7 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
         `,
         technical: `
             body {
-                font-family: 'JetBrains Mono', monospace;
+                font-family: 'JetBrains Mono', 'Courier New', monospace;
                 font-size: 9.5pt;
             }
 
@@ -240,7 +241,7 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
                 margin-bottom: 8pt;
                 border-radius: 4px;
                 color: #4c1d95;
-                border-right: 4px solid #7c3aed;
+                border-left: 4px solid #7c3aed;
             }
 
             h3 {
@@ -254,11 +255,13 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
             }
 
             li::before {
-                content: "::";
+                content: "▶";
                 position: absolute;
                 left: 0;
                 color: #7c3aed;
                 font-weight: 800;
+                font-size: 7pt;
+                top: 2pt;
             }
         `
     };
