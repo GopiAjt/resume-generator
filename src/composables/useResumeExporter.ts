@@ -34,7 +34,7 @@ export function useResumeExporter() {
             document.body.appendChild(wrapper);
 
             const opt = {
-                margin: [1, 1, 10, 1] as [number, number, number, number],
+                margin: [0, 0, 0, 0] as [number, number, number, number],
                 filename: fileName,
                 image: { type: 'jpeg' as const, quality: 0.95 },
                 html2canvas: {

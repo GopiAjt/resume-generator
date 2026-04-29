@@ -60,10 +60,12 @@ defineExpose({
     padding-left: 1.4rem;
     margin-bottom: 4pt;
     line-height: 1.5;
+    font-size: 10pt;
 }
 
 .resume-paper :deep(p) {
     margin: 0 0 6pt 0;
+    font-size: 10pt;
 }
 
 .resume-paper :deep(h1),
@@ -114,8 +116,7 @@ defineExpose({
     color: #2563eb;
     text-transform: uppercase;
     border-bottom: 2px solid #2563eb;
-    padding-bottom: 4pt;
-    margin-top: 18pt;
+    margin-top: 10pt;
     margin-bottom: 8pt;
     letter-spacing: 0.05em;
 }
@@ -123,7 +124,6 @@ defineExpose({
 .template-modern :deep(h3) {
     font-size: 11pt;
     font-weight: 700;
-    margin-top: 10pt;
     margin-bottom: 2pt;
 }
 
@@ -152,8 +152,6 @@ defineExpose({
     text-align: center;
     font-size: 10pt;
     border-bottom: 2px solid #4338ca;
-    padding-bottom: 8pt;
-    margin-bottom: 20pt;
     color: #6366f1;
 }
 
@@ -164,16 +162,14 @@ defineExpose({
     border-top: 2px solid #4338ca;
     border-bottom: 1px solid #4338ca;
     padding: 4pt 0;
-    margin-top: 20pt;
-    margin-bottom: 10pt;
     font-weight: 700;
+    margin-top: 10pt;
     color: #4338ca;
 }
 
 .template-executive :deep(h3) {
     font-size: 11.5pt;
     font-weight: 700;
-    margin-top: 12pt;
     margin-bottom: 3pt;
     color: #1a202c;
 }
@@ -202,7 +198,6 @@ defineExpose({
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: #10b981;
-    margin-bottom: 24pt;
 }
 
 .template-minimal :deep(h2) {
@@ -210,7 +205,7 @@ defineExpose({
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.2em;
-    margin-top: 24pt;
+    margin-top: 15pt;
     margin-bottom: 8pt;
     color: #059669;
     border-left: 4px solid #059669;
@@ -220,7 +215,6 @@ defineExpose({
 .template-minimal :deep(h3) {
     font-size: 11pt;
     font-weight: 600;
-    margin-top: 12pt;
     margin-bottom: 3pt;
     color: #065f46;
 }
@@ -254,7 +248,6 @@ defineExpose({
     background: #7c3aed;
     color: #fff;
     padding: 8pt 12pt;
-    margin-bottom: 20pt;
     border-radius: 0 0 10px 10px;
     font-weight: 600;
 }
@@ -264,7 +257,6 @@ defineExpose({
     font-weight: 800;
     background: #f3f4f6;
     padding: 5pt 10pt;
-    margin-top: 18pt;
     margin-bottom: 8pt;
     border-radius: 4px;
     color: #4c1d95;
@@ -277,8 +269,6 @@ defineExpose({
     color: #7c3aed;
     border-bottom: 2px dashed #ddd6fe;
     display: block;
-    /* was inline-block — caused underline to only span word width */
-    margin-top: 10pt;
     margin-bottom: 3pt;
     padding-bottom: 2pt;
 }
@@ -338,16 +328,20 @@ defineExpose({
 /* ATS-Friendly PDF Export Styles */
 .resume-paper.pdf-export {
     width: 210mm;
-    padding: 10mm;
-    font-size: 11pt;
-    line-height: 1.4;
-    color: #000;
-    background: #fff;
-    margin: 0;
-    box-shadow: none;
-    border: none;
-    border-radius: 0;
-    background-image: none;
+    min-height: 0 !important;
+    max-height: 296.5mm !important;
+    height: auto !important;
+    padding: 5mm;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background-image: none !important;
+    overflow: hidden !important;
+}
+
+.resume-paper.pdf-export::after {
+    display: none !important;
 }
 
 /* Prevent bad splits - avoid breaking inside these elements */
