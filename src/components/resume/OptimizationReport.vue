@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { getScoreClass } from '@/utils/resumeUtils';
 
+interface OptimizationItem {
+    category: string;
+    action: string;
+    impact: string;
+}
+
 defineProps<{
-    optimizationReport: string[];
+    optimizationReport: OptimizationItem[];
     originalAtsScore: number;
     atsScore: number;
 }>();
@@ -32,10 +38,19 @@ defineProps<{
                     <span class="score-value">{{ atsScore }}%</span>
                 </div>
             </div>
+            <p class="score-disclaimer">
+                * Note: These are approximate keyword match estimates, not scores from a real ATS engine.
+            </p>
         </div>
         <div class="report-content">
             <ul class="report-list">
-                <li v-for="(item, index) in optimizationReport" :key="index">{{ item }}</li>
+                <li v-for="(item, index) in optimizationReport" :key="index" class="report-item">
+                    <div class="report-item-header">
+                        <span class="report-category">{{ item.category }}</span>
+                        <span class="report-impact" :class="item.impact.toLowerCase()">{{ item.impact }} Impact</span>
+                    </div>
+                    <div class="report-action">{{ item.action }}</div>
+                </li>
             </ul>
         </div>
     </div>
@@ -214,22 +229,74 @@ h3 {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-4);
 }
 
-.report-list li {
-    font-size: 1.05rem;
-    line-height: 1.5;
-    color: var(--color-text);
-    padding-left: var(--space-8);
-    position: relative;
+.report-item {
+    background: hsla(var(--hue-primary), 20%, 98%, 1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
 }
 
-.report-list li::before {
-    content: "✔️";
-    position: absolute;
-    left: 0;
+.report-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.report-category {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
     color: var(--color-primary);
+    background: hsla(var(--hue-primary), 50%, 90%, 0.5);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.report-impact {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+}
+
+.report-impact.high {
+    color: #059669;
+    background: hsla(142, 70%, 90%, 0.5);
+}
+
+.report-impact.medium {
+    color: #d97706;
+    background: hsla(45, 90%, 90%, 0.5);
+}
+
+.report-impact.low {
+    color: #dc2626;
+    background: hsla(0, 80%, 90%, 0.5);
+}
+
+.report-action {
     font-size: 1rem;
+    line-height: 1.5;
+    color: var(--color-heading);
+}
+
+@media (prefers-color-scheme: dark) {
+    .report-item {
+        background: hsla(220, 40%, 12%, 1);
+    }
+}
+
+.score-disclaimer {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-top: var(--space-4);
+    text-align: center;
+    font-style: italic;
 }
 </style>

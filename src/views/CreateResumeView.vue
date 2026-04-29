@@ -34,7 +34,7 @@ const generatedResume = ref('')
 const generatedResumeHtml = ref('')
 const originalAtsScore = ref(0)
 const atsScore = ref(0)
-const optimizationReport = ref<string[]>([])
+const optimizationReport = ref<any[]>([])
 const errorMessage = ref('')
 const selectedTemplate = ref('modern')
 

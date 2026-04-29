@@ -27,8 +27,8 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
         body {
             margin: 0;
             padding: 0;
-            font-size: 10pt;
-            line-height: ${isPrint ? '1.4' : '1.5'};
+            font-size: 8.5pt;
+            line-height: ${isPrint ? '1.15' : '1.3'};
             color: var(--resume-text);
             font-family: 'Inter', Arial, sans-serif;
             background: #fff;
@@ -38,9 +38,11 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
             padding: 0;
             color: var(--resume-heading);
             font-weight: 700;
+            margin-top: ${isPrint ? '2pt' : '4pt'};
+            margin-bottom: ${isPrint ? '1pt' : '2pt'};
         }
 
-        p { margin: 0 0 ${isPrint ? '4pt' : '6pt'} 0; }
+        p { margin: 0 0 ${isPrint ? '1.5pt' : '2pt'} 0; }
 
         ul {
             margin: 0;
@@ -50,8 +52,8 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
 
         li {
             position: relative;
-            padding-left: 1.4rem;
-            margin-bottom: ${isPrint ? '3pt' : '4pt'};
+            padding-left: 0.9rem;
+            margin-bottom: ${isPrint ? '1pt' : '1.5pt'};
             list-style: none !important;
         }
 
@@ -60,6 +62,11 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
         em, i { font-style: italic; }
 
         a { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+
+        @page {
+            size: A4;
+            margin: 12mm 15mm;
+        }
 
         @media print {
             body { -webkit-print-color-adjust: exact; }
@@ -79,29 +86,29 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
             }
 
             .resume-meta {
-                font-size: 10pt;
+                font-size: 8.5pt;
                 color: #475569;
-                margin-bottom: 16pt;
+                margin-bottom: 6pt;
                 font-weight: 500;
             }
 
             h2 {
-                font-size: 12pt;
+                font-size: 10pt;
                 font-weight: 700;
                 color: #2563eb;
                 text-transform: uppercase;
                 border-bottom: 2px solid #2563eb;
-                padding-bottom: 4pt;
-                margin-top: 18pt;
-                margin-bottom: 8pt;
+                padding-bottom: 1pt;
+                margin-top: 6pt;
+                margin-bottom: 2pt;
                 letter-spacing: 0.05em;
             }
 
             h3 {
-                font-size: 11pt;
+                font-size: 9.5pt;
                 font-weight: 700;
-                margin-top: 10pt;
-                margin-bottom: 2pt;
+                margin-top: 3pt;
+                margin-bottom: 1pt;
             }
 
             li::before {
@@ -127,31 +134,30 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
 
             .resume-meta {
                 text-align: center;
-                font-size: 10pt;
                 border-bottom: 2px solid #4338ca;
-                padding-bottom: 8pt;
-                margin-bottom: 20pt;
+                padding-bottom: 3pt;
+                margin-bottom: 6pt;
                 color: #6366f1;
             }
 
             h2 {
-                font-size: 13pt;
+                font-size: 11pt;
                 text-transform: uppercase;
                 text-align: center;
                 border-top: 2px solid #4338ca;
                 border-bottom: 1px solid #4338ca;
-                padding: 4pt 0;
-                margin-top: 20pt;
-                margin-bottom: 10pt;
+                padding: 2pt 0;
+                margin-top: 6pt;
+                margin-bottom: 3pt;
                 font-weight: 700;
                 color: #4338ca;
             }
 
             h3 {
-                font-size: 11.5pt;
+                font-size: 9.5pt;
                 font-weight: 700;
-                margin-top: 12pt;
-                margin-bottom: 3pt;
+                margin-top: 3pt;
+                margin-bottom: 1pt;
                 color: #1a202c;
             }
 
@@ -171,30 +177,30 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
             }
 
             .resume-meta {
-                font-size: 9pt;
+                font-size: 8pt;
                 text-transform: uppercase;
                 letter-spacing: 0.1em;
                 color: #10b981;
-                margin-bottom: 24pt;
+                margin-bottom: 6pt;
             }
 
             h2 {
-                font-size: 11.5pt;
+                font-size: 9.5pt;
                 font-weight: 800;
                 text-transform: uppercase;
                 letter-spacing: 0.2em;
-                margin-top: 24pt;
-                margin-bottom: 8pt;
+                margin-top: 8pt;
+                margin-bottom: 3pt;
                 color: #059669;
                 border-left: 4px solid #059669;
-                padding-left: 10pt;
+                padding-left: 6pt;
             }
 
             h3 {
-                font-size: 11pt;
+                font-size: 9pt;
                 font-weight: 600;
-                margin-top: 12pt;
-                margin-bottom: 3pt;
+                margin-top: 3pt;
+                margin-bottom: 1pt;
                 color: #065f46;
             }
 
@@ -223,35 +229,35 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
             }
 
             .resume-meta {
-                font-size: 9pt;
+                font-size: 8pt;
                 background: #7c3aed;
                 color: #fff;
-                padding: 8pt 12pt;
-                margin-bottom: 20pt;
+                padding: 4pt 8pt;
+                margin-bottom: 6pt;
                 border-radius: 0 0 10px 10px;
                 font-weight: 600;
             }
 
             h2 {
-                font-size: 11pt;
+                font-size: 10pt;
                 font-weight: 800;
                 background: #f3f4f6;
-                padding: 5pt 10pt;
-                margin-top: 18pt;
-                margin-bottom: 8pt;
+                padding: 3pt 6pt;
+                margin-top: 6pt;
+                margin-bottom: 3pt;
                 border-radius: 4px;
                 color: #4c1d95;
                 border-left: 4px solid #7c3aed;
             }
 
             h3 {
-                font-size: 10.5pt;
+                font-size: 9pt;
                 font-weight: 700;
                 color: #7c3aed;
                 border-bottom: 2px dashed #ddd6fe;
                 display: inline-block;
-                margin-top: 10pt;
-                margin-bottom: 3pt;
+                margin-top: 3pt;
+                margin-bottom: 1pt;
             }
 
             li::before {
