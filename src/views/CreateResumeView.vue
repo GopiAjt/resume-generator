@@ -293,27 +293,30 @@ const onCopyMarkdown = () => {
 
 <template>
     <div class="create-resume container fade-in">
-        <!-- Toast Notification -->
-        <Transition name="toast">
-            <div v-if="toast.show" class="toast-notification" :class="toast.type" role="alert" aria-live="polite">
-                <div class="toast-content">
-                    <span v-if="toast.type === 'warning'" class="toast-icon" aria-hidden="true">⚠️</span>
-                    <span v-else-if="toast.type === 'success'" class="toast-icon" aria-hidden="true">✅</span>
-                    <span v-else class="toast-icon" aria-hidden="true">❌</span>
-                    <p>{{ toast.message }}</p>
+        <!-- Toast Notification (Teleported to body to fix position: fixed inside transformed parents) -->
+        <Teleport to="body">
+            <Transition name="toast">
+                <div v-if="toast.show" class="toast-notification" :class="toast.type" role="alert" aria-live="polite">
+                    <div class="toast-content">
+                        <span v-if="toast.type === 'warning'" class="toast-icon" aria-hidden="true">⚠️</span>
+                        <span v-else-if="toast.type === 'success'" class="toast-icon" aria-hidden="true">✅</span>
+                        <span v-else class="toast-icon" aria-hidden="true">❌</span>
+                        <p>{{ toast.message }}</p>
+                    </div>
+                    <button @click="toast.show = false" class="toast-close"
+                        aria-label="Close notification">&times;</button>
                 </div>
-                <button @click="toast.show = false" class="toast-close" aria-label="Close notification">&times;</button>
-            </div>
-        </Transition>
+            </Transition>
+        </Teleport>
 
         <div class="header-section">
             <h1 class="text-display">Optimize Your Resume</h1>
             <p class="subtitle">Upload your existing resume and paste a job description to get a tailored, ATS-ready
                 version in seconds.</p>
-            <button @click="loadTestResume" class="btn btn-ghost btn-sm"
+            <!-- <button @click="loadTestResume" class="btn btn-ghost btn-sm"
                 style="margin-top: var(--space-4); border: 2px solid var(--color-primary); border-radius: var(--radius-md); padding: var(--space-2) var(--space-4);">
                 Load Test Resume (CSS Testing)
-            </button>
+            </button> -->
         </div>
 
         <div class="input-section" v-if="!generatedResume">
