@@ -1,6 +1,8 @@
 import { ref } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { logger } from '@/utils/logger';
 
 // Setup PDF.js worker
@@ -54,10 +56,17 @@ export function useResumeProcessor() {
         }
     };
 
+    const formatResumeHtml = async (markdown: string) => {
+        const rawHtml = await marked.parse(markdown)
+        const sanitizedHtml = DOMPurify.sanitize(rawHtml);
+        return sanitizedHtml.replace(/<p>(.*?)<\/p>/, '<p class="resume-meta">$1</p>');
+    }
+
     return {
         isExtracting,
         extractedResumeText,
         errorMessage,
-        extractTextFromFile
+        extractTextFromFile,
+        formatResumeHtml
     };
 }

@@ -297,7 +297,7 @@ defineExpose({
 
     .resume-paper:not(.pdf-export) :deep(p),
     .resume-paper:not(.pdf-export) :deep(li) {
-        font-size: 5pt;
+        font-size: 4pt;
         line-height: 1.3;
         margin-bottom: 2pt;
     }

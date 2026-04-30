@@ -1,5 +1,4 @@
-// @ts-ignore
-import html2pdf from 'html2pdf.js';
+
 import { getTemplateStyles } from '@/services/resumeStyles';
 import { getFilename } from '@/utils/resumeUtils';
 import { logger } from '@/utils/logger';
@@ -53,6 +52,11 @@ export function useResumeExporter() {
                     avoid: ['h1', 'h2', 'h3', 'p', 'li']
                 }
             };
+
+            // Dynamically import html2pdf ONLY when needed to reduce main bundle size by ~700KB
+            // @ts-ignore
+            const html2pdfModule = await import('html2pdf.js');
+            const html2pdf = html2pdfModule.default || html2pdfModule;
 
             await html2pdf()
                 .set(opt)
