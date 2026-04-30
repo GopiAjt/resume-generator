@@ -24,6 +24,58 @@ const MAX_FILE_SIZE_MB = 5
 const MAX_JD_LENGTH = 10000
 const MAX_RESUME_LENGTH = 20000
 
+// Test Resume Content (for CSS template testing)
+const TEST_RESUME_MARKDOWN = `# Gopi Ajatarao
+Bengaluru, India | gopi.ajatarao@gmail.com | +91 90088 30298 | [LinkedIn](https://www.linkedin.com/in/gopi-ajt) | [GitHub](https://www.github.com/GopiAjt)
+
+## SUMMARY
+Results-oriented Java Developer with over 2 years of experience building high-performance backend systems and RESTful APIs.
+Specialized in Spring Boot architecture, MySQL performance tuning, and scalable containerized deployments via Docker.
+
+## SKILLS
+### BACKEND DEVELOPMENT
+Java, Spring Boot, JDBC, RESTful API Design, Microservices, JWT Authentication.
+### DATABASES & TOOLS
+MySQL, Docker, Git, GitHub, JSON, Postman, API Testing.
+
+## EXPERIENCE
+### Kochar Infotech Pvt. Ltd.
+**Java Developer | March 2024 – March 2026**
+
+- Engineered scalable backend services using **Java and Spring Boot**, reducing core API response times by **30%** via optimized data handling.
+- Optimized **MySQL database schemas** and complex queries to support high-concurrency modules and improve system reliability.
+- Implemented **JWT security protocols** and role-based access controls to ensure secure and efficient user session management.
+- Orchestrated application deployments in **Dockerized environments**, ensuring scalable, reproducible, and reliable production releases.
+
+## PROJECTS
+### CaptureNow — Booking & Management Platform
+**Backend Developer**
+
+- Architected a robust **Spring Boot** backend supporting real-time photographer booking updates and secure data operations.
+- Integrated high-efficiency **RESTful APIs**, resulting in a **25% reduction** in user transaction processing time.
+- Implemented **JWT security protocols** and role-based access controls to ensure secure and efficient user session management.
+- Orchestrated application deployments in **Dockerized environments**, ensuring scalable, reproducible, and reliable production releases.
+- Architected a robust **Spring Boot** backend supporting real-time photographer booking updates and secure data operations.
+- Integrated high-efficiency **RESTful APIs**, resulting in a **25% reduction** in user transaction processing time.
+- Implemented **JWT security protocols** and role-based access controls to ensure secure and efficient user session management.
+- Orchestrated application deployments in **Dockerized environments**, ensuring scalable, reproducible, and reliable production releases.
+- Architected a robust **Spring Boot** backend supporting real-time photographer booking updates and secure data operations.
+- Integrated high-efficiency **RESTful APIs**, resulting in a **25% reduction** in user transaction processing time.
+- Implemented **JWT security protocols** and role-based access controls to ensure secure and efficient user session management.
+- Orchestrated application deployments in **Dockerized environments**, ensuring scalable, reproducible, and reliable production releases.
+- Architected a robust **Spring Boot** backend supporting real-time photographer booking updates and secure data operations.
+- Integrated high-efficiency **RESTful APIs**, resulting in a **25% reduction** in user transaction processing time.
+- Implemented **JWT security protocols** and role-based access controls to ensure secure and efficient user session management.
+- Orchestrated application deployments in **Dockerized environments**, ensuring scalable, reproducible, and reliable production releases.
+- Architected a robust **Spring Boot** backend supporting real-time photographer booking updates and secure data operations.
+- Integrated high-efficiency **RESTful APIs**, resulting in a **25% reduction** in user transaction processing time.
+- Implemented **JWT security protocols** and role-based access controls to ensure secure and efficient user session management.
+- Orchestrated application deployments in **Dockerized environments**, ensuring scalable, reproducible, and reliable production releases.
+
+## EDUCATION
+### Maratha Mandal Engineering College
+**Bachelor of Engineering in Computer Science & Engineering | Aug 2018 – Aug 2022**`;
+
 // State
 const jobDescription = ref('')
 const companyName = ref('')
@@ -37,6 +89,7 @@ const atsScore = ref(0)
 const optimizationReport = ref<any[]>([])
 const errorMessage = ref('')
 const selectedTemplate = ref('modern')
+const isTestMode = ref(false)
 
 const resumePaperRef = ref<InstanceType<typeof ResumePaper> | null>(null)
 const toast = ref({
@@ -48,6 +101,18 @@ const toast = ref({
 // Logic
 const { isExtracting, extractedResumeText, extractTextFromFile, errorMessage: extractionError } = useResumeProcessor()
 const { downloadPDF, downloadDOC, copyToClipboard } = useResumeExporter()
+
+// Load test resume for CSS testing
+const loadTestResume = async () => {
+    isTestMode.value = true
+    generatedResume.value = TEST_RESUME_MARKDOWN
+    generatedResumeHtml.value = await formatResumeHtml(TEST_RESUME_MARKDOWN)
+    atsScore.value = 85
+    originalAtsScore.value = 45
+    optimizationReport.value = [
+        { category: "Test Mode", action: "Loaded test resume for CSS template testing", impact: "Medium" }
+    ]
+}
 
 // Loading step cycler
 const LOADING_STEPS = [
@@ -245,6 +310,10 @@ const onCopyMarkdown = () => {
             <h1 class="text-display">Optimize Your Resume</h1>
             <p class="subtitle">Upload your existing resume and paste a job description to get a tailored, ATS-ready
                 version in seconds.</p>
+            <button @click="loadTestResume" class="btn btn-ghost btn-sm"
+                style="margin-top: var(--space-4); border: 2px solid var(--color-primary); border-radius: var(--radius-md); padding: var(--space-2) var(--space-4);">
+                Load Test Resume (CSS Testing)
+            </button>
         </div>
 
         <div class="input-section" v-if="!generatedResume">

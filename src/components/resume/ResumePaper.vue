@@ -66,6 +66,7 @@ defineExpose({
 .resume-paper :deep(p) {
     margin: 0 0 6pt 0;
     font-size: 10pt;
+    color: rgb(0, 0, 0);
 }
 
 .resume-paper :deep(h1),
@@ -285,23 +286,121 @@ defineExpose({
 
 /* Mobile Adjustments for Preview */
 @media (max-width: 768px) {
-    .resume-paper {
+    .resume-paper:not(.pdf-export) {
         width: 100%;
         max-width: 100%;
         min-height: auto;
-        padding: 2%;
-        /* User preference preserved */
+        padding: 4%;
         box-shadow: none;
         border: 1px solid var(--color-border);
     }
 
-    .template-technical :deep(h1) {
-        border-left-width: 4px;
-        font-size: 18pt;
+    .resume-paper:not(.pdf-export) :deep(p),
+    .resume-paper:not(.pdf-export) :deep(li) {
+        font-size: 6pt;
+        line-height: 1.3;
+        margin-bottom: 2pt;
     }
 
-    .template-technical :deep(.resume-meta) {
-        border-radius: 4px;
+    .resume-paper:not(.pdf-export) :deep(li) {
+        padding-left: 0.8rem;
+    }
+
+    /* MODERN */
+    .template-modern:not(.pdf-export) :deep(h1) {
+        font-size: 14pt;
+        margin-bottom: 2pt;
+    }
+
+    .template-modern:not(.pdf-export) :deep(.resume-meta) {
+        font-size: 6pt;
+        margin-bottom: 6pt;
+    }
+
+    .template-modern:not(.pdf-export) :deep(h2) {
+        font-size: 8pt;
+        margin-top: 6pt;
+        margin-bottom: 4pt;
+    }
+
+    .template-modern:not(.pdf-export) :deep(h3) {
+        font-size: 7.5pt;
+        margin-bottom: 1pt;
+    }
+
+    /* EXECUTIVE */
+    .template-executive:not(.pdf-export) :deep(h1) {
+        font-size: 15pt;
+        margin-bottom: 3pt;
+    }
+
+    .template-executive:not(.pdf-export) :deep(.resume-meta) {
+        font-size: 6pt;
+        padding-bottom: 4pt;
+        margin-bottom: 8pt;
+    }
+
+    .template-executive:not(.pdf-export) :deep(h2) {
+        font-size: 8.5pt;
+        padding: 2pt 0;
+        margin-top: 6pt;
+        margin-bottom: 4pt;
+    }
+
+    .template-executive:not(.pdf-export) :deep(h3) {
+        font-size: 7pt;
+        margin-bottom: 1pt;
+    }
+
+    /* MINIMAL */
+    .template-minimal:not(.pdf-export) :deep(h1) {
+        font-size: 13pt;
+        margin-bottom: 2pt;
+    }
+
+    .template-minimal:not(.pdf-export) :deep(.resume-meta) {
+        font-size: 5.5pt;
+        letter-spacing: 0.05em;
+    }
+
+    .template-minimal:not(.pdf-export) :deep(h2) {
+        font-size: 7.5pt;
+        margin-top: 8pt;
+        margin-bottom: 4pt;
+        padding-left: 6pt;
+    }
+
+    .template-minimal:not(.pdf-export) :deep(h3) {
+        font-size: 7pt;
+        margin-bottom: 1pt;
+    }
+
+    /* TECHNICAL */
+    .template-technical:not(.pdf-export) {
+        font-size: 6pt !important;
+    }
+
+    .template-technical:not(.pdf-export) :deep(h1) {
+        font-size: 12pt !important;
+        padding: 3pt 6pt;
+        margin-bottom: 3pt;
+        border-left-width: 4px;
+    }
+
+    .template-technical:not(.pdf-export) :deep(.resume-meta) {
+        font-size: 6pt;
+        padding: 4pt 6pt;
+    }
+
+    .template-technical:not(.pdf-export) :deep(h2) {
+        font-size: 7pt !important;
+        padding: 2pt 4pt;
+        margin-bottom: 4pt;
+    }
+
+    .template-technical:not(.pdf-export) :deep(h3) {
+        font-size: 6.5pt !important;
+        margin-bottom: 1pt;
     }
 }
 
@@ -330,7 +429,7 @@ defineExpose({
     width: 210mm;
     min-height: 0 !important;
     height: auto !important;
-    padding: 5mm;
+    padding: 0mm 5mm;
     margin: 0 !important;
     box-shadow: none !important;
     border: none !important;

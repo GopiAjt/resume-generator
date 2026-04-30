@@ -34,7 +34,7 @@ export function useResumeExporter() {
             document.body.appendChild(wrapper);
 
             const opt = {
-                margin: [0, 0, 0, 0] as [number, number, number, number],
+                margin: [5, 0, 5, 0] as [number, number, number, number],
                 filename: fileName,
                 image: { type: 'jpeg' as const, quality: 0.95 },
                 html2canvas: {
@@ -48,14 +48,9 @@ export function useResumeExporter() {
                     orientation: 'portrait' as const
                 },
                 pagebreak: {
-                    mode: ['css'], // ONLY CSS-based control
+                    mode: ['css', 'legacy'],
                     before: '.page-break',
-                    avoid: [
-                        '.section',
-                        '.experience-item',
-                        '.project-item',
-                        '.education-item'
-                    ]
+                    avoid: ['h1', 'h2', 'h3', 'p', 'li']
                 }
             };
 
