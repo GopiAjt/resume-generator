@@ -329,7 +329,6 @@ defineExpose({
 .resume-paper.pdf-export {
     width: 210mm;
     min-height: 0 !important;
-    max-height: 296.5mm !important;
     height: auto !important;
     padding: 5mm;
     margin: 0 !important;
@@ -337,7 +336,6 @@ defineExpose({
     border: none !important;
     border-radius: 0 !important;
     background-image: none !important;
-    overflow: hidden !important;
 }
 
 .resume-paper.pdf-export::after {
