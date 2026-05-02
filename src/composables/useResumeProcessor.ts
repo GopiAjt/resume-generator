@@ -1,13 +1,9 @@
 import { ref } from 'vue';
-import * as pdfjsLib from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import mammoth from 'mammoth';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { logger } from '@/utils/logger';
-
-// Setup PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+import { pdfjsLib } from '@/utils/pdfjs';
 
 export function useResumeProcessor() {
     const isExtracting = ref(false);

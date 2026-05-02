@@ -5,6 +5,54 @@ import { logger } from '@/utils/logger';
 import { generateTextBasedPdf } from '@/utils/textPdfGenerator';
 
 export function useResumeExporter() {
+    const isMobileWebKit = () => {
+        if (typeof navigator === 'undefined') {
+            return false;
+        }
+
+        const ua = navigator.userAgent || navigator.vendor || '';
+        const isIOS = /iPad|iPhone|iPod/.test(ua);
+        const isAndroidWebKit = /Android/.test(ua) && /AppleWebKit/i.test(ua);
+
+        return isIOS || isAndroidWebKit;
+    };
+
+    const triggerBlobDownload = async (blob: Blob, fileName: string) => {
+        const objectUrl = URL.createObjectURL(blob);
+
+        try {
+            if (isMobileWebKit()) {
+                const dataUrl = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(String(reader.result || ''));
+                    reader.onerror = () => reject(reader.error || new Error('Failed to read generated file.'));
+                    reader.readAsDataURL(blob);
+                });
+
+                const mobileLink = document.createElement('a');
+                mobileLink.style.display = 'none';
+                mobileLink.href = dataUrl;
+                mobileLink.download = fileName;
+                document.body.appendChild(mobileLink);
+                mobileLink.click();
+                document.body.removeChild(mobileLink);
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.style.display = 'none';
+            link.href = objectUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } finally {
+            setTimeout(() => {
+                URL.revokeObjectURL(objectUrl);
+            }, 1000);
+        }
+    };
+
     const downloadPDF = async (
         resumeContainer: HTMLElement | null,
         generatedResumeMarkdown: string,
@@ -23,21 +71,7 @@ export function useResumeExporter() {
 
             // Generate text-based PDF with selectable text and template styling
             const pdfBlob = await generateTextBasedPdf(generatedResumeMarkdown, companyName, selectedTemplate, onProgress);
-
-            // Download the blob
-            const url = URL.createObjectURL(pdfBlob);
-            const link = document.createElement('a');
-            link.style.display = 'none';
-            link.href = url;
-            link.download = fileName;
-
-            document.body.appendChild(link);
-            link.click();
-
-            setTimeout(() => {
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-            }, 100);
+            await triggerBlobDownload(pdfBlob, fileName);
 
             onSuccess('ATS-friendly PDF with selectable text downloaded!');
         } catch (error) {
@@ -46,7 +80,7 @@ export function useResumeExporter() {
         }
     };
 
-    const downloadDOC = (
+    const downloadDOC = async (
         generatedResumeHtml: string, 
         generatedResumeMarkdown: string, 
         companyName: string, 
@@ -78,20 +112,8 @@ export function useResumeExporter() {
             </html>
         `;
 
-        const blob = new Blob([content], { type: 'application/msword' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.style.display = 'none';
-        link.href = url;
-        link.download = fileName;
-        
-        document.body.appendChild(link);
-        link.click();
-        
-        setTimeout(() => {
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }, 100);
+        const blob = new Blob(['\ufeff', content], { type: 'application/msword;charset=utf-8' });
+        await triggerBlobDownload(blob, fileName);
         
         onSuccess('DOC downloaded successfully!');
     };

@@ -79,7 +79,7 @@ const PT_TO_MM = 0.352778;
 const SECTION_SPACING = {
     heading1Bottom: 6,
     heading2Top: 6,
-    heading2Bottom: 2,
+    heading2Bottom: 5,
     heading3Top: 3,
     heading3Bottom: 1,
     metaBottom: 6,

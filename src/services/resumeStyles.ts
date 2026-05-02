@@ -218,12 +218,13 @@ export const getTemplateStyles = (templateId: string, isPrint = false, scopeSele
             font-weight: ${template.heading2Weight};
             color: ${template.heading2Color};
             text-align: ${template.heading2Align};
+            line-height: 1.2;
             text-transform: ${template.heading2Uppercase ? 'uppercase' : 'none'};
             letter-spacing: ${templateId === 'modern' ? '0.05em' : templateId === 'minimal' ? '0.2em' : '0'};
             border-bottom: ${template.heading2Underline ? `2px solid ${template.heading2Color}` : 'none'};
             margin-top: 6pt;
-            margin-bottom: 2pt;
-            padding-bottom: ${template.heading2Underline ? '1pt' : '0'};
+            margin-bottom: ${template.heading2Underline ? '5pt' : '2pt'};
+            padding-bottom: ${template.heading2Underline ? '2pt' : '0'};
         }
 
         ${select(' h3')} {

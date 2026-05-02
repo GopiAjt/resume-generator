@@ -17,6 +17,7 @@ import { useResumeProcessor } from '@/composables/useResumeProcessor'
 import { useResumeExporter } from '@/composables/useResumeExporter'
 import { useToast } from '@/composables/useToast'
 import { getScoreClass } from '@/utils/resumeUtils'
+import { TEST_COMPANY_NAME, TEST_JOB_DESCRIPTION, TEST_RESUME_MARKDOWN } from '@/utils/testResume'
 
 // Constants
 const MAX_FILE_SIZE_MB = 5
@@ -172,6 +173,20 @@ const handleSubmit = async () => {
     }
 }
 
+const loadTestResume = async () => {
+    errorMessage.value = ''
+    companyName.value = TEST_COMPANY_NAME
+    jobDescription.value = TEST_JOB_DESCRIPTION
+    extractedResumeText.value = TEST_RESUME_MARKDOWN
+    generatedResume.value = TEST_RESUME_MARKDOWN
+    generatedResumeHtml.value = await formatResumeHtml(TEST_RESUME_MARKDOWN)
+    originalAtsScore.value = 0
+    atsScore.value = 0
+    optimizationReport.value = []
+    resumeFile.value = null
+    showToast('Loaded test resume for quick preview.', 'success')
+}
+
 const onDownloadPDF = () => {
     const container = resumePaperRef.value?.resumeContainer ?? null
     downloadPDF(
@@ -249,6 +264,10 @@ const onCopyMarkdown = () => {
                     </span>
                     <span v-else>Optimize Resume</span>
                 </button>
+                <button @click="loadTestResume" class="btn btn-secondary"
+                    :disabled="isGenerating || isExtracting">
+                    Load Test Resume
+                </button>
             </div>
         </div>
 
@@ -324,6 +343,8 @@ const onCopyMarkdown = () => {
 .actions {
     display: flex;
     justify-content: flex-end;
+    gap: var(--space-3);
+    flex-wrap: wrap;
 }
 
 .loading-step-text {
@@ -358,6 +379,23 @@ const onCopyMarkdown = () => {
     cursor: pointer;
     box-shadow: 0 4px 14px hsla(var(--hue-primary), 80%, 60%, 0.4);
     transition: all var(--transition-base);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--color-text);
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.btn-secondary:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: hsla(var(--hue-primary), 80%, 60%, 0.06);
 }
 
 .btn-primary:hover:not(:disabled) {
