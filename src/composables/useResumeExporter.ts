@@ -2,81 +2,44 @@
 import { getTemplateStyles } from '@/services/resumeStyles';
 import { getFilename } from '@/utils/resumeUtils';
 import { logger } from '@/utils/logger';
+import { generateTextBasedPdf } from '@/utils/textPdfGenerator';
 
 export function useResumeExporter() {
     const downloadPDF = async (
         resumeContainer: HTMLElement | null,
         generatedResumeMarkdown: string,
         companyName: string,
+        selectedTemplate: string,
         onProgress: (msg: string) => void,
         onSuccess: (msg: string) => void,
         onError: (msg: string) => void
     ) => {
-        if (!resumeContainer) return;
+        if (!generatedResumeMarkdown) return;
 
         const fileName = `${getFilename(generatedResumeMarkdown, companyName)}.pdf`;
 
         try {
-            onProgress('Generating ATS-friendly multi-page PDF...');
+            onProgress('Generating ATS-friendly text-based PDF...');
 
-            // Clone node to avoid mutating live UI
-            const clonedNode = resumeContainer.cloneNode(true) as HTMLElement;
+            // Generate text-based PDF with selectable text and template styling
+            const pdfBlob = await generateTextBasedPdf(generatedResumeMarkdown, companyName, selectedTemplate, onProgress);
 
-            // Apply print-specific styles
-            clonedNode.classList.add('pdf-export');
+            // Download the blob
+            const url = URL.createObjectURL(pdfBlob);
+            const link = document.createElement('a');
+            link.style.display = 'none';
+            link.href = url;
+            link.download = fileName;
 
-            // Inject into hidden container
-            const wrapper = document.createElement('div');
-            wrapper.style.position = 'fixed';
-            wrapper.style.left = '-9999px';
-            wrapper.appendChild(clonedNode);
-            document.body.appendChild(wrapper);
+            document.body.appendChild(link);
+            link.click();
 
-            const opt = {
-                margin: [5, 0, 5, 0] as [number, number, number, number],
-                filename: fileName,
-                image: { type: 'jpeg' as const, quality: 0.95 },
-                html2canvas: {
-                    scale: 2, // reduce memory pressure for multi-page
-                    useCORS: true,
-                    backgroundColor: '#ffffff'
-                },
-                jsPDF: {
-                    unit: 'mm',
-                    format: 'a4',
-                    orientation: 'portrait' as const
-                },
-                pagebreak: {
-                    mode: ['css', 'legacy'],
-                    before: '.page-break',
-                    avoid: ['h1', 'h2', 'h3', 'p', 'li']
-                }
-            };
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 100);
 
-            // Dynamically import html2pdf ONLY when needed to reduce main bundle size by ~700KB
-            // @ts-ignore
-            const html2pdfModule = await import('html2pdf.js');
-            const html2pdf = html2pdfModule.default || html2pdfModule;
-
-            await html2pdf()
-                .set(opt)
-                .from(clonedNode)
-                .toPdf()
-                .get('pdf')
-                .then((pdf: any) => {
-                    // Ensure proper metadata (helps ATS slightly)
-                    pdf.setProperties({
-                        title: fileName,
-                        subject: 'Resume',
-                        author: 'Candidate',
-                        keywords: 'resume, profile, cv'
-                    });
-                    pdf.save(fileName);
-                });
-
-            document.body.removeChild(wrapper);
-
-            onSuccess('Multi-page ATS-friendly PDF downloaded!');
+            onSuccess('ATS-friendly PDF with selectable text downloaded!');
         } catch (error) {
             logger.error('PDF generation failed:', error);
             onError('Failed to generate PDF. Click "Copy Markdown" if needed.');

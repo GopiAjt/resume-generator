@@ -178,6 +178,7 @@ const onDownloadPDF = () => {
         container,
         generatedResume.value,
         companyName.value,
+        selectedTemplate.value,
         (msg) => showToast(msg, 'success'),
         (msg) => showToast(msg, 'success'),
         (msg) => showToast(msg, 'error')

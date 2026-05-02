@@ -1,12 +1,13 @@
 import { ref } from 'vue';
 import * as pdfjsLib from 'pdfjs-dist';
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import mammoth from 'mammoth';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { logger } from '@/utils/logger';
 
 // Setup PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
 
 export function useResumeProcessor() {
     const isExtracting = ref(false);
@@ -33,6 +34,7 @@ export function useResumeProcessor() {
                     text += strings.join(' ') + '\n';
                 }
                 extractedResumeText.value = text;
+                logger.info('Extracted PDF Text:', text);
             } else if (
                 fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
                 fileName.endsWith('.docx')
@@ -40,6 +42,7 @@ export function useResumeProcessor() {
                 const arrayBuffer = await file.arrayBuffer();
                 const result = await mammoth.extractRawText({ arrayBuffer });
                 extractedResumeText.value = result.value;
+                logger.info('Extracted DOCX Text:', result.value);
             } else {
                 throw new Error('Unsupported file format. Please upload a PDF or DOCX file.');
             }

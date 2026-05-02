@@ -42,13 +42,13 @@ header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: hsla(220, 20%, 98%, 0.8);
+  background: hsla(0, 0%, 100%, 0);
   border-bottom: 1px solid var(--color-border);
 }
 
 @media (prefers-color-scheme: dark) {
   header {
-    background: hsla(220, 40%, 8%, 0.8);
+    background: hsla(0, 0%, 100%, 0);
   }
 }
 
