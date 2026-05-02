@@ -107,7 +107,7 @@ export const resumeTemplateStyles: Record<string, ResumeTemplateStyle> = {
     metaSize: 8.5,
     metaColor: '#6366f1',
     metaWeight: 400,
-    metaAlign: 'center',
+    metaAlign: 'left',
     accentColor: '#4338ca',
     bulletChar: '▪',
     pdfBulletChar: '-',
