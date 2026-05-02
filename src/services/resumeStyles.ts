@@ -5,6 +5,32 @@ export interface Template {
     description: string;
 }
 
+export interface ResumeTemplateStyle {
+    cssFontFamily: string;
+    pdfFontFamily: 'helvetica' | 'times' | 'courier';
+    heading1Size: number;
+    heading1Weight: number;
+    heading1Color: string;
+    heading1Align: 'left' | 'center';
+    heading2Size: number;
+    heading2Weight: number;
+    heading2Color: string;
+    heading2Align: 'left' | 'center';
+    heading2Uppercase: boolean;
+    heading2Underline: boolean;
+    heading3Size: number;
+    heading3Weight: number;
+    heading3Color: string;
+    bodySize: number;
+    bodyColor: string;
+    metaSize: number;
+    metaColor: string;
+    metaWeight: number;
+    metaAlign: 'left' | 'center';
+    accentColor: string;
+    bulletChar: string;
+}
+
 export const templates: Template[] = [
     { id: 'modern', name: 'Modern Blue', icon: '✨', description: 'Clean, professional with vibrant blue accents.' },
     { id: 'executive', name: 'Executive', icon: '👔', description: 'Classic serif font with rich indigo tones.' },
@@ -12,57 +38,211 @@ export const templates: Template[] = [
     { id: 'technical', name: 'Technical', icon: '💻', description: 'Compact design with electric violet highlights.' }
 ];
 
-export const getTemplateStyles = (templateId: string, isPrint = false) => {
-    // Shared base — applies both in browser preview (via DOC export) and PDF
-    const baseCSS = `
-        :root {
-            --resume-primary: #2563eb;
-            --resume-text: #0f172a;
-            --resume-heading: #020617;
-            --resume-border-color: #e2e8f0;
-        }
+export const resumeTemplateStyles: Record<string, ResumeTemplateStyle> = {
+    modern: {
+        cssFontFamily: 'Arial, Helvetica, sans-serif',
+        pdfFontFamily: 'helvetica',
+        heading1Size: 24,
+        heading1Weight: 800,
+        heading1Color: '#2563eb',
+        heading1Align: 'left',
+        heading2Size: 10,
+        heading2Weight: 700,
+        heading2Color: '#2563eb',
+        heading2Align: 'left',
+        heading2Uppercase: true,
+        heading2Underline: true,
+        heading3Size: 9.5,
+        heading3Weight: 700,
+        heading3Color: '#0f172a',
+        bodySize: 8.5,
+        bodyColor: '#0f172a',
+        metaSize: 8.5,
+        metaColor: '#475569',
+        metaWeight: 500,
+        metaAlign: 'left',
+        accentColor: '#2563eb',
+        bulletChar: '•',
+    },
+    executive: {
+        cssFontFamily: '"Times New Roman", Times, serif',
+        pdfFontFamily: 'times',
+        heading1Size: 26,
+        heading1Weight: 600,
+        heading1Color: '#4338ca',
+        heading1Align: 'center',
+        heading2Size: 11,
+        heading2Weight: 700,
+        heading2Color: '#4338ca',
+        heading2Align: 'center',
+        heading2Uppercase: true,
+        heading2Underline: false,
+        heading3Size: 9.5,
+        heading3Weight: 700,
+        heading3Color: '#1a202c',
+        bodySize: 8.5,
+        bodyColor: '#0f172a',
+        metaSize: 8.5,
+        metaColor: '#6366f1',
+        metaWeight: 400,
+        metaAlign: 'center',
+        accentColor: '#4338ca',
+        bulletChar: '▪',
+    },
+    minimal: {
+        cssFontFamily: 'Arial, Helvetica, sans-serif',
+        pdfFontFamily: 'helvetica',
+        heading1Size: 22,
+        heading1Weight: 500,
+        heading1Color: '#059669',
+        heading1Align: 'left',
+        heading2Size: 9.5,
+        heading2Weight: 800,
+        heading2Color: '#059669',
+        heading2Align: 'left',
+        heading2Uppercase: true,
+        heading2Underline: false,
+        heading3Size: 9,
+        heading3Weight: 600,
+        heading3Color: '#065f46',
+        bodySize: 8,
+        bodyColor: '#0f172a',
+        metaSize: 8,
+        metaColor: '#10b981',
+        metaWeight: 500,
+        metaAlign: 'left',
+        accentColor: '#10b981',
+        bulletChar: '—',
+    },
+    technical: {
+        cssFontFamily: '"Courier New", Courier, monospace',
+        pdfFontFamily: 'courier',
+        heading1Size: 22,
+        heading1Weight: 800,
+        heading1Color: '#5b21b6',
+        heading1Align: 'left',
+        heading2Size: 10,
+        heading2Weight: 800,
+        heading2Color: '#4c1d95',
+        heading2Align: 'left',
+        heading2Uppercase: false,
+        heading2Underline: false,
+        heading3Size: 9,
+        heading3Weight: 700,
+        heading3Color: '#7c3aed',
+        bodySize: 9.5,
+        bodyColor: '#0f172a',
+        metaSize: 9.5,
+        metaColor: '#0f172a',
+        metaWeight: 400,
+        metaAlign: 'left',
+        accentColor: '#7c3aed',
+        bulletChar: '▶',
+    },
+};
 
-        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+export const getTemplateStyles = (templateId: string, isPrint = false, scopeSelector?: string) => {
+    const template: ResumeTemplateStyle = resumeTemplateStyles[templateId] ?? resumeTemplateStyles.modern!;
+    const rootSelector = scopeSelector || 'body';
+    const select = (suffix = '') => `${rootSelector}${suffix}`;
+    const contentSelector = scopeSelector ? `${scopeSelector} *` : '*';
+    const headingSelector = `${select(' h1')}, ${select(' h2')}, ${select(' h3')}`;
 
-        body {
+    return `
+        ${contentSelector} { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        ${rootSelector} {
             margin: 0;
             padding: 0;
-            font-size: 8.5pt;
+            font-size: ${template.bodySize}pt;
             line-height: ${isPrint ? '1.15' : '1.3'};
-            color: var(--resume-text);
-            font-family: 'Inter', Arial, sans-serif;
+            color: ${template.bodyColor};
+            font-family: ${template.cssFontFamily};
             background: #fff;
+            text-align: left;
         }
 
-        h1, h2, h3 {
+        ${headingSelector} {
             padding: 0;
-            color: var(--resume-heading);
             font-weight: 700;
             margin-top: ${isPrint ? '2pt' : '4pt'};
             margin-bottom: ${isPrint ? '1pt' : '2pt'};
         }
 
-        p { margin: 0 0 ${isPrint ? '1.5pt' : '2pt'} 0; }
+        ${select(' p')} {
+            margin: 0 0 ${isPrint ? '1.5pt' : '2pt'} 0;
+            font-size: ${template.bodySize}pt;
+            color: ${template.bodyColor};
+        }
 
-        ul {
+        ${select(' ul')} {
             margin: 0;
             padding: 0;
             list-style: none !important;
         }
 
-        li {
+        ${select(' li')} {
             position: relative;
             padding-left: 0.9rem;
             margin-bottom: ${isPrint ? '1pt' : '1.5pt'};
             list-style: none !important;
+            font-size: ${template.bodySize}pt;
+            line-height: ${isPrint ? '1.15' : '1.3'};
         }
 
-        /* Ensure AI-generated bold keywords and italic text render correctly */
-        strong, b { font-weight: 700; }
-        em, i { font-style: italic; }
+        ${select(' strong')}, ${select(' b')} { font-weight: 700; }
+        ${select(' em')}, ${select(' i')} { font-style: italic; }
+        ${select(' a')} { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
 
-        a { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+        ${select(' h1')} {
+            font-size: ${template.heading1Size}pt;
+            font-weight: ${template.heading1Weight};
+            color: ${template.heading1Color};
+            text-align: ${template.heading1Align};
+            margin-bottom: 6pt;
+            letter-spacing: ${templateId === 'modern' ? '-0.02em' : '0'};
+        }
 
+        ${select(' .resume-meta')} {
+            font-size: ${template.metaSize}pt;
+            color: ${template.metaColor};
+            font-weight: ${template.metaWeight};
+            text-align: ${template.metaAlign};
+            text-transform: ${templateId === 'minimal' ? 'uppercase' : 'none'};
+            letter-spacing: ${templateId === 'minimal' ? '0.1em' : '0'};
+            margin-bottom: 6pt;
+        }
+
+        ${select(' h2')} {
+            font-size: ${template.heading2Size}pt;
+            font-weight: ${template.heading2Weight};
+            color: ${template.heading2Color};
+            text-align: ${template.heading2Align};
+            text-transform: ${template.heading2Uppercase ? 'uppercase' : 'none'};
+            letter-spacing: ${templateId === 'modern' ? '0.05em' : templateId === 'minimal' ? '0.2em' : '0'};
+            border-bottom: ${template.heading2Underline ? `2px solid ${template.heading2Color}` : 'none'};
+            margin-top: 6pt;
+            margin-bottom: 2pt;
+            padding-bottom: ${template.heading2Underline ? '1pt' : '0'};
+        }
+
+        ${select(' h3')} {
+            font-size: ${template.heading3Size}pt;
+            font-weight: ${template.heading3Weight};
+            color: ${template.heading3Color};
+            margin-top: 3pt;
+            margin-bottom: 1pt;
+        }
+
+        ${select(' li::before')} {
+            content: "${template.bulletChar}";
+            position: absolute;
+            left: 0;
+            color: ${template.accentColor};
+            font-weight: 700;
+        }
+
+        ${!scopeSelector ? `
         @page {
             size: A4;
             margin: 12mm 15mm;
@@ -72,208 +252,6 @@ export const getTemplateStyles = (templateId: string, isPrint = false) => {
             body { -webkit-print-color-adjust: exact; }
             h1, h2, h3, li { page-break-inside: avoid; break-inside: avoid; }
             section, .section { page-break-inside: avoid; }
-        }
-    `;
-
-    const templateSpecificCSS: Record<string, string> = {
-        modern: `
-            h1 {
-                font-size: 24pt;
-                font-weight: 800;
-                color: #2563eb;
-                margin-bottom: 6pt;
-                letter-spacing: -0.02em;
-            }
-
-            .resume-meta {
-                font-size: 8.5pt;
-                color: #475569;
-                margin-bottom: 6pt;
-                font-weight: 500;
-            }
-
-            h2 {
-                font-size: 10pt;
-                font-weight: 700;
-                color: #2563eb;
-                text-transform: uppercase;
-                border-bottom: 2px solid #2563eb;
-                padding-bottom: 1pt;
-                margin-top: 6pt;
-                margin-bottom: 2pt;
-                letter-spacing: 0.05em;
-            }
-
-            h3 {
-                font-size: 9.5pt;
-                font-weight: 700;
-                margin-top: 3pt;
-                margin-bottom: 1pt;
-            }
-
-            li::before {
-                content: "•";
-                position: absolute;
-                left: 0;
-                color: #2563eb;
-                font-weight: bold;
-            }
-        `,
-        executive: `
-            body {
-                font-family: 'Georgia', serif;
-            }
-
-            h1 {
-                font-size: 26pt;
-                text-align: center;
-                font-weight: 600;
-                margin-bottom: 6pt;
-                color: #4338ca;
-            }
-
-            .resume-meta {
-                text-align: center;
-                border-bottom: 2px solid #4338ca;
-                padding-bottom: 3pt;
-                margin-bottom: 6pt;
-                color: #6366f1;
-            }
-
-            h2 {
-                font-size: 11pt;
-                text-transform: uppercase;
-                text-align: center;
-                border-top: 2px solid #4338ca;
-                border-bottom: 1px solid #4338ca;
-                padding: 2pt 0;
-                margin-top: 6pt;
-                margin-bottom: 3pt;
-                font-weight: 700;
-                color: #4338ca;
-            }
-
-            h3 {
-                font-size: 9.5pt;
-                font-weight: 700;
-                margin-top: 3pt;
-                margin-bottom: 1pt;
-                color: #1a202c;
-            }
-
-            li::before {
-                content: "▪";
-                position: absolute;
-                left: 0;
-                color: #4338ca;
-            }
-        `,
-        minimal: `
-            h1 {
-                font-size: 22pt;
-                font-weight: 500;
-                margin-bottom: 4pt;
-                color: #059669;
-            }
-
-            .resume-meta {
-                font-size: 8pt;
-                text-transform: uppercase;
-                letter-spacing: 0.1em;
-                color: #10b981;
-                margin-bottom: 6pt;
-            }
-
-            h2 {
-                font-size: 9.5pt;
-                font-weight: 800;
-                text-transform: uppercase;
-                letter-spacing: 0.2em;
-                margin-top: 8pt;
-                margin-bottom: 3pt;
-                color: #059669;
-                border-left: 4px solid #059669;
-                padding-left: 6pt;
-            }
-
-            h3 {
-                font-size: 9pt;
-                font-weight: 600;
-                margin-top: 3pt;
-                margin-bottom: 1pt;
-                color: #065f46;
-            }
-
-            li::before {
-                content: "—";
-                position: absolute;
-                left: 0;
-                color: #10b981;
-                font-weight: 800;
-            }
-        `,
-        technical: `
-            body {
-                font-family: 'JetBrains Mono', 'Courier New', monospace;
-                font-size: 9.5pt;
-            }
-
-            h1 {
-                font-size: 22pt;
-                font-weight: 800;
-                border-left: 8px solid #7c3aed;
-                padding: 6pt 12pt;
-                background: #f5f3ff;
-                margin-bottom: 6pt;
-                color: #5b21b6;
-            }
-
-            .resume-meta {
-                font-size: 8pt;
-                background: #7c3aed;
-                color: #fff;
-                padding: 4pt 8pt;
-                margin-bottom: 6pt;
-                border-radius: 0 0 10px 10px;
-                font-weight: 600;
-            }
-
-            h2 {
-                font-size: 10pt;
-                font-weight: 800;
-                background: #f3f4f6;
-                padding: 3pt 6pt;
-                margin-top: 6pt;
-                margin-bottom: 3pt;
-                border-radius: 4px;
-                color: #4c1d95;
-                border-left: 4px solid #7c3aed;
-            }
-
-            h3 {
-                font-size: 9pt;
-                font-weight: 700;
-                color: #7c3aed;
-                border-bottom: 2px dashed #ddd6fe;
-                display: inline-block;
-                margin-top: 3pt;
-                margin-bottom: 1pt;
-            }
-
-            li::before {
-                content: "▶";
-                position: absolute;
-                left: 0;
-                color: #7c3aed;
-                font-weight: 800;
-                font-size: 7pt;
-                top: 2pt;
-            }
-        `
-    };
-
-    return `
-        ${baseCSS}
-        ${templateSpecificCSS[templateId] || templateSpecificCSS.modern}
+        }` : ''}
     `;
 };

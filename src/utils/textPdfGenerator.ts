@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { logger } from '@/utils/logger';
+import { resumeTemplateStyles } from '@/services/resumeStyles';
 
 interface PdfSection {
     type: 'heading1' | 'heading2' | 'heading3' | 'paragraph' | 'list' | 'meta';
@@ -9,108 +10,90 @@ interface PdfSection {
 }
 
 interface TemplateConfig {
-    heading1Font: string;
+    heading1Font: 'helvetica' | 'times' | 'courier';
     heading1Size: number;
     heading1Color: [number, number, number];
     heading1Align: 'left' | 'center';
-    heading2Font: string;
+    heading2Font: 'helvetica' | 'times' | 'courier';
     heading2Size: number;
     heading2Color: [number, number, number];
     heading2Align: 'left' | 'center';
     heading2Uppercase: boolean;
     heading2Underline: boolean;
-    heading3Font: string;
+    heading3Font: 'helvetica' | 'times' | 'courier';
     heading3Size: number;
     heading3Color: [number, number, number];
-    bodyFont: string;
+    bodyFont: 'helvetica' | 'times' | 'courier';
     bodySize: number;
     bodyColor: [number, number, number];
+    metaSize: number;
+    metaColor: [number, number, number];
+    metaAlign: 'left' | 'center';
     accentColor: [number, number, number];
     bulletChar: string;
 }
 
-const templates: Record<string, TemplateConfig> = {
-    modern: {
-        heading1Font: 'helvetica',
-        heading1Size: 24,
-        heading1Color: [37, 99, 235], // Blue
-        heading1Align: 'left',
-        heading2Font: 'helvetica',
-        heading2Size: 10,
-        heading2Color: [37, 99, 235], // Blue
-        heading2Align: 'left',
-        heading2Uppercase: true,
-        heading2Underline: true,
-        heading3Font: 'helvetica',
-        heading3Size: 9.5,
-        heading3Color: [15, 23, 42], // Slate 900
-        bodyFont: 'helvetica',
-        bodySize: 8.5,
-        bodyColor: [15, 23, 42], // Slate 900
-        accentColor: [37, 99, 235], // Blue
-        bulletChar: '•',
-    },
-    executive: {
-        heading1Font: 'times',
-        heading1Size: 26,
-        heading1Color: [67, 56, 202], // Indigo
-        heading1Align: 'center',
-        heading2Font: 'times',
-        heading2Size: 11,
-        heading2Color: [67, 56, 202], // Indigo
-        heading2Align: 'center',
-        heading2Uppercase: true,
-        heading2Underline: false,
-        heading3Font: 'times',
-        heading3Size: 9.5,
-        heading3Color: [26, 32, 44], // Dark
-        bodyFont: 'times',
-        bodySize: 8.5,
-        bodyColor: [15, 23, 42], // Slate 900
-        accentColor: [67, 56, 202], // Indigo
-        bulletChar: '▪',
-    },
-    minimal: {
-        heading1Font: 'helvetica',
-        heading1Size: 22,
-        heading1Color: [5, 150, 105], // Emerald
-        heading1Align: 'left',
-        heading2Font: 'helvetica',
-        heading2Size: 9.5,
-        heading2Color: [5, 150, 105], // Emerald
-        heading2Align: 'left',
-        heading2Uppercase: true,
-        heading2Underline: false,
-        heading3Font: 'helvetica',
-        heading3Size: 9,
-        heading3Color: [6, 95, 70], // Dark Emerald
-        bodyFont: 'helvetica',
-        bodySize: 8,
-        bodyColor: [15, 23, 42], // Slate 900
-        accentColor: [16, 185, 129], // Emerald (lighter for bullets)
-        bulletChar: '—',
-    },
-    technical: {
-        heading1Font: 'courier',
-        heading1Size: 22,
-        heading1Color: [91, 33, 182], // Dark Violet
-        heading1Align: 'left',
-        heading2Font: 'courier',
-        heading2Size: 10,
-        heading2Color: [76, 29, 149], // Dark Violet
-        heading2Align: 'left',
-        heading2Uppercase: false,
-        heading2Underline: false,
-        heading3Font: 'courier',
-        heading3Size: 9,
-        heading3Color: [124, 58, 237], // Violet
-        bodyFont: 'courier',
-        bodySize: 9.5,
-        bodyColor: [15, 23, 42], // Slate 900
-        accentColor: [124, 58, 237], // Violet
-        bulletChar: '▶',
-    },
+const hexToRgb = (hex: string): [number, number, number] => {
+    const normalized = hex.replace('#', '');
+    const value = normalized.length === 3
+        ? normalized.split('').map((char) => char + char).join('')
+        : normalized;
+
+    return [
+        Number.parseInt(value.slice(0, 2), 16),
+        Number.parseInt(value.slice(2, 4), 16),
+        Number.parseInt(value.slice(4, 6), 16),
+    ];
 };
+
+const templates: Record<string, TemplateConfig> = Object.fromEntries(
+    Object.entries(resumeTemplateStyles).map(([key, style]) => [
+        key,
+        {
+            heading1Font: style.pdfFontFamily,
+            heading1Size: style.heading1Size,
+            heading1Color: hexToRgb(style.heading1Color),
+            heading1Align: style.heading1Align,
+            heading2Font: style.pdfFontFamily,
+            heading2Size: style.heading2Size,
+            heading2Color: hexToRgb(style.heading2Color),
+            heading2Align: style.heading2Align,
+            heading2Uppercase: style.heading2Uppercase,
+            heading2Underline: style.heading2Underline,
+            heading3Font: style.pdfFontFamily,
+            heading3Size: style.heading3Size,
+            heading3Color: hexToRgb(style.heading3Color),
+            bodyFont: style.pdfFontFamily,
+            bodySize: style.bodySize,
+            bodyColor: hexToRgb(style.bodyColor),
+            metaSize: style.metaSize,
+            metaColor: hexToRgb(style.metaColor),
+            metaAlign: style.metaAlign,
+            accentColor: hexToRgb(style.accentColor),
+            bulletChar: style.bulletChar,
+        },
+    ])
+) as Record<string, TemplateConfig>;
+
+const PT_TO_MM = 0.352778;
+const SECTION_SPACING = {
+    heading1Bottom: 6,
+    heading2Top: 6,
+    heading2Bottom: 2,
+    heading3Top: 3,
+    heading3Bottom: 1,
+    metaBottom: 6,
+    paragraphBottom: 2,
+    listBottom: 1.5,
+};
+
+function ptToMm(value: number): number {
+    return value * PT_TO_MM;
+}
+
+function getLineHeightMm(fontSizePt: number, multiplier: number = 1.3): number {
+    return ptToMm(fontSizePt * multiplier);
+}
 
 export function generateTextBasedPdf(
     markdown: string,
@@ -139,6 +122,7 @@ export function generateTextBasedPdf(
             const margin = 12.7; // 0.5 inch margin
             const maxWidth = pageWidth - (margin * 2);
             let currentY = margin;
+            let previousSectionType: PdfSection['type'] | null = null;
 
             // Helper function to check and handle page breaks
             const checkPageBreak = (y: number, requiredSpace: number = template.bodySize * 0.5): number => {
@@ -164,6 +148,7 @@ export function generateTextBasedPdf(
             // Process each section
             for (const section of sections) {
                 currentY = checkPageBreak(currentY);
+                currentY += getSpacingBeforeSection(section.type, previousSectionType);
 
                 switch (section.type) {
                     case 'heading1':
@@ -172,9 +157,9 @@ export function generateTextBasedPdf(
                         doc.setTextColor(...template.heading1Color);
                         const h1X = template.heading1Align === 'center' ? pageWidth / 2 : margin;
                         const h1Align = template.heading1Align === 'center' ? 'center' : 'left';
-                        const h1LineHeight = template.heading1Size * 0.5;
+                        const h1LineHeight = getLineHeightMm(template.heading1Size);
                         currentY = addWrappedText(doc, section.text, h1X, currentY, maxWidth, h1LineHeight, h1Align, checkPageBreak);
-                        currentY += h1LineHeight;
+                        currentY += ptToMm(SECTION_SPACING.heading1Bottom);
                         break;
 
                     case 'heading2':
@@ -184,43 +169,40 @@ export function generateTextBasedPdf(
                         const h2Text = template.heading2Uppercase ? section.text.toUpperCase() : section.text;
                         const h2X = template.heading2Align === 'center' ? pageWidth / 2 : margin;
                         const h2Align = template.heading2Align === 'center' ? 'center' : 'left';
-                        const h2LineHeight = template.heading2Size * 0.5;
-                        const beforeUnderlineY = currentY;
+                        const h2LineHeight = getLineHeightMm(template.heading2Size);
                         currentY = addWrappedText(doc, h2Text, h2X, currentY, maxWidth, h2LineHeight, h2Align, checkPageBreak);
                         if (template.heading2Underline) {
-                            const textWidth = doc.getTextWidth(h2Text);
-                            const underlineX = template.heading2Align === 'center' ? (pageWidth / 2) - (textWidth / 2) : margin;
                             doc.setDrawColor(...template.heading2Color);
                             doc.setLineWidth(0.3);
-                            doc.line(underlineX, currentY + 1, underlineX + textWidth, currentY + 1);
-                            currentY += 2;
+                            doc.line(margin, currentY + ptToMm(1), margin + maxWidth, currentY + ptToMm(1));
                         }
-                        currentY += h2LineHeight * 0.5;
+                        currentY += ptToMm(SECTION_SPACING.heading2Bottom);
                         break;
 
                     case 'heading3':
                         doc.setFont(template.heading3Font, 'bold');
                         doc.setFontSize(template.heading3Size);
                         doc.setTextColor(...template.heading3Color);
-                        const h3LineHeight = template.heading3Size * 0.5;
+                        const h3LineHeight = getLineHeightMm(template.heading3Size);
                         currentY = addWrappedText(doc, section.text, margin, currentY, maxWidth, h3LineHeight, 'left', checkPageBreak);
-                        currentY += h3LineHeight * 0.3;
+                        currentY += ptToMm(SECTION_SPACING.heading3Bottom);
                         break;
 
                     case 'meta':
                         doc.setFont(template.bodyFont, 'normal');
-                        doc.setFontSize(template.bodySize);
-                        doc.setTextColor(...template.bodyColor);
-                        const metaLineHeight = template.bodySize * 0.5;
-                        currentY = addWrappedText(doc, section.text, margin, currentY, maxWidth, metaLineHeight, 'left', checkPageBreak);
-                        currentY += metaLineHeight * 0.5;
+                        doc.setFontSize(template.metaSize);
+                        doc.setTextColor(...template.metaColor);
+                        const metaLineHeight = getLineHeightMm(template.metaSize);
+                        const metaX = template.metaAlign === 'center' ? pageWidth / 2 : margin;
+                        currentY = addWrappedText(doc, section.text, metaX, currentY, maxWidth, metaLineHeight, template.metaAlign, checkPageBreak);
+                        currentY += ptToMm(SECTION_SPACING.metaBottom);
                         break;
 
                     case 'paragraph':
                         doc.setFont(template.bodyFont, 'normal');
                         doc.setFontSize(template.bodySize);
                         doc.setTextColor(...template.bodyColor);
-                        const paraLineHeight = template.bodySize * 0.5;
+                        const paraLineHeight = getLineHeightMm(template.bodySize);
                         if (section.inlineText && section.inlineText.length > 0) {
                             // Handle inline bold text
                             currentY = addInlineText(doc, section.inlineText, margin, currentY, maxWidth, paraLineHeight, template.bodyFont, template.bodyColor, checkPageBreak);
@@ -228,35 +210,43 @@ export function generateTextBasedPdf(
                             doc.setFont(template.bodyFont, section.bold ? 'bold' : 'normal');
                             currentY = addWrappedText(doc, section.text, margin, currentY, maxWidth, paraLineHeight, 'left', checkPageBreak);
                         }
-                        currentY += paraLineHeight * 0.5;
+                        currentY += ptToMm(SECTION_SPACING.paragraphBottom);
                         break;
 
                     case 'list':
                         doc.setFont(template.bodyFont, 'normal');
                         doc.setFontSize(template.bodySize);
                         doc.setTextColor(...template.bodyColor);
-                        const listLineHeight = template.bodySize * 0.5;
+                        const listLineHeight = getLineHeightMm(template.bodySize);
                         const items = section.text.split('\n');
                         for (const item of items) {
                             currentY = checkPageBreak(currentY, listLineHeight);
-                            const lines = doc.splitTextToSize(item, maxWidth - 8);
-                            for (let i = 0; i < lines.length; i++) {
-                                currentY = checkPageBreak(currentY, listLineHeight);
-                                if (i === 0) {
-                                    doc.setTextColor(...template.accentColor);
-                                    doc.text(template.bulletChar, margin, currentY);
-                                    doc.setTextColor(...template.bodyColor);
-                                    doc.text(lines[i], margin + 8, currentY);
-                                } else {
-                                    // Wrapped lines align with text, not bullet
-                                    doc.text(lines[i], margin + 8, currentY);
-                                }
-                                currentY += listLineHeight;
+                            doc.setTextColor(...template.accentColor);
+                            doc.text(template.bulletChar, margin, currentY);
+                            doc.setTextColor(...template.bodyColor);
+
+                            const inlineItemText = parseInlineBold(item);
+                            if (inlineItemText.length > 0) {
+                                currentY = addInlineText(
+                                    doc,
+                                    inlineItemText,
+                                    margin + 8,
+                                    currentY,
+                                    maxWidth - 8,
+                                    listLineHeight,
+                                    template.bodyFont,
+                                    template.bodyColor,
+                                    checkPageBreak
+                                );
+                            } else {
+                                currentY = addWrappedText(doc, stripMarkdownMarkers(item), margin + 8, currentY, maxWidth - 8, listLineHeight, 'left', checkPageBreak);
                             }
                         }
-                        currentY += listLineHeight * 0.3;
+                        currentY += ptToMm(SECTION_SPACING.listBottom);
                         break;
                 }
+
+                previousSectionType = section.type;
             }
 
             // Generate blob
@@ -336,7 +326,7 @@ function parseMarkdownToSections(markdown: string): PdfSection[] {
             currentList = [];
             sections.push({
                 type: 'meta',
-                text: trimmed
+                text: normalizeMetaText(trimmed)
             });
         }
         // Regular paragraph - check for inline bold
@@ -344,16 +334,16 @@ function parseMarkdownToSections(markdown: string): PdfSection[] {
             flushList(sections, currentList);
             currentList = [];
             const inlineText = parseInlineBold(trimmed);
-            if (inlineText.length > 1) {
+            if (inlineText.length > 0) {
                 sections.push({
                     type: 'paragraph',
-                    text: trimmed,
+                    text: stripMarkdownMarkers(trimmed),
                     inlineText
                 });
             } else {
                 sections.push({
                     type: 'paragraph',
-                    text: trimmed
+                    text: stripMarkdownMarkers(trimmed)
                 });
             }
         }
@@ -380,7 +370,7 @@ function parseInlineBold(text: string): Array<{ text: string; bold: boolean }> {
             }
         }
         // Add bold text
-        parts.push({ text: match[1], bold: true });
+        parts.push({ text: match[1]!, bold: true });
         lastIndex = regex.lastIndex;
     }
 
@@ -398,6 +388,40 @@ function parseInlineBold(text: string): Array<{ text: string; bold: boolean }> {
     }
 
     return parts;
+}
+
+function stripMarkdownMarkers(text: string): string {
+    return text.replace(/\*\*(.*?)\*\*/g, '$1');
+}
+
+function stripMarkdownLinks(text: string): string {
+    return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1');
+}
+
+function normalizeMetaText(text: string): string {
+    return stripMarkdownLinks(text)
+        .replace(/\s*\|\s*/g, ' | ')
+        .replace(/\s+\|$/g, '')
+        .trim();
+}
+
+function getSpacingBeforeSection(
+    current: PdfSection['type'],
+    previous: PdfSection['type'] | null
+): number {
+    if (!previous) {
+        return 0;
+    }
+
+    if (current === 'heading2') {
+        return ptToMm(SECTION_SPACING.heading2Top);
+    }
+
+    if (current === 'heading3') {
+        return ptToMm(SECTION_SPACING.heading3Top);
+    }
+
+    return 0;
 }
 
 function flushList(sections: PdfSection[], currentList: string[]) {
@@ -452,29 +476,35 @@ function addInlineText(
 ): number {
     let currentX = x;
     let currentY = y;
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 12.7;
+    let hasRenderedTextOnLine = false;
 
     for (const part of inlineText) {
         doc.setFont(font, part.bold ? 'bold' : 'normal');
         doc.setTextColor(...color);
 
-        const words = part.text.split(' ');
-        for (const word of words) {
-            const wordWithSpace = word + ' ';
-            const wordWidth = doc.getTextWidth(wordWithSpace);
+        const tokens = part.text.split(/(\s+)/).filter((token) => token.length > 0);
+        for (const token of tokens) {
+            const isWhitespace = /^\s+$/.test(token);
+            const tokenWidth = doc.getTextWidth(token);
 
-            // Check if word fits on current line
-            if (currentX + wordWidth > x + maxWidth) {
+            if (!isWhitespace && hasRenderedTextOnLine && currentX + tokenWidth > x + maxWidth) {
                 currentX = x;
                 currentY += lineHeight;
                 currentY = checkPageBreak(currentY, lineHeight);
+                hasRenderedTextOnLine = false;
             }
 
-            doc.text(word, currentX, currentY);
-            currentX += wordWidth;
+            if (isWhitespace && !hasRenderedTextOnLine) {
+                continue;
+            }
+
+            doc.text(token, currentX, currentY);
+            currentX += tokenWidth;
+            if (!isWhitespace) {
+                hasRenderedTextOnLine = true;
+            }
         }
     }
 
-    return currentY;
+    return currentY + lineHeight;
 }
