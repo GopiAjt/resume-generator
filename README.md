@@ -24,7 +24,7 @@ An AI-powered resume optimization tool that helps you create tailored, ATS-frien
 - **File Processing**: PDF.js (PDF extraction), Mammoth (DOCX extraction)
 - **Markdown**: Marked.js for markdown parsing
 - **Security**: DOMPurify for XSS sanitization
-- **PDF Generation**: html2pdf.js
+- **PDF Generation**: jsPDF (text-based, ATS-friendly PDFs)
 - **Linting**: ESLint with oxlint, Prettier for formatting
 - **Testing**: Vitest
 

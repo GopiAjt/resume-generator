@@ -408,7 +408,6 @@ defineExpose({
 .resume-paper.is-printing {
     width: 210mm !important;
     padding: 10mm 12mm !important;
-    /* matches the 10mm margin set in html2pdf config */
     margin: 0 !important;
     box-shadow: none !important;
     border: none !important;
