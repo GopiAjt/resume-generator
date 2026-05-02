@@ -10,17 +10,17 @@ interface PdfSection {
 interface TemplateConfig {
     heading1Font: string;
     heading1Size: number;
-    heading1Color: number[];
+    heading1Color: [number, number, number];
     heading2Font: string;
     heading2Size: number;
-    heading2Color: number[];
+    heading2Color: [number, number, number];
     heading3Font: string;
     heading3Size: number;
-    heading3Color: number[];
+    heading3Color: [number, number, number];
     bodyFont: string;
     bodySize: number;
-    bodyColor: number[];
-    accentColor: number[];
+    bodyColor: [number, number, number];
+    accentColor: [number, number, number];
 }
 
 const templates: Record<string, TemplateConfig> = {
@@ -104,6 +104,9 @@ export function generateTextBasedPdf(
 
             // Get template configuration
             const template = templates[selectedTemplate] || templates.modern;
+            if (!template) {
+                throw new Error('Template configuration not found');
+            }
 
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
@@ -209,8 +212,7 @@ function parseMarkdownToSections(markdown: string): PdfSection[] {
     const lines = markdown.split('\n');
     let currentList: string[] = [];
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+    for (const line of lines) {
         const trimmed = line.trim();
 
         // Empty line - flush any current list
