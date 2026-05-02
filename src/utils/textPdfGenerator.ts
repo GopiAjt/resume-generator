@@ -70,7 +70,7 @@ const templates: Record<string, TemplateConfig> = Object.fromEntries(
             metaColor: hexToRgb(style.metaColor),
             metaAlign: style.metaAlign,
             accentColor: hexToRgb(style.accentColor),
-            bulletChar: style.bulletChar,
+            bulletChar: style.pdfBulletChar || style.bulletChar,
         },
     ])
 ) as Record<string, TemplateConfig>;
