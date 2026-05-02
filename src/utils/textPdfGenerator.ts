@@ -11,9 +11,13 @@ interface TemplateConfig {
     heading1Font: string;
     heading1Size: number;
     heading1Color: [number, number, number];
+    heading1Align: 'left' | 'center';
     heading2Font: string;
     heading2Size: number;
     heading2Color: [number, number, number];
+    heading2Align: 'left' | 'center';
+    heading2Uppercase: boolean;
+    heading2Underline: boolean;
     heading3Font: string;
     heading3Size: number;
     heading3Color: [number, number, number];
@@ -21,68 +25,89 @@ interface TemplateConfig {
     bodySize: number;
     bodyColor: [number, number, number];
     accentColor: [number, number, number];
+    bulletChar: string;
 }
 
 const templates: Record<string, TemplateConfig> = {
     modern: {
         heading1Font: 'helvetica',
-        heading1Size: 20,
+        heading1Size: 24,
         heading1Color: [37, 99, 235], // Blue
+        heading1Align: 'left',
         heading2Font: 'helvetica',
-        heading2Size: 14,
+        heading2Size: 10,
         heading2Color: [37, 99, 235], // Blue
+        heading2Align: 'left',
+        heading2Uppercase: true,
+        heading2Underline: true,
         heading3Font: 'helvetica',
-        heading3Size: 12,
-        heading3Color: [37, 99, 235], // Blue
+        heading3Size: 9.5,
+        heading3Color: [15, 23, 42], // Slate 900
         bodyFont: 'helvetica',
-        bodySize: 10,
+        bodySize: 8.5,
         bodyColor: [15, 23, 42], // Slate 900
         accentColor: [37, 99, 235], // Blue
+        bulletChar: '•',
     },
     executive: {
         heading1Font: 'times',
-        heading1Size: 22,
+        heading1Size: 26,
         heading1Color: [67, 56, 202], // Indigo
+        heading1Align: 'center',
         heading2Font: 'times',
-        heading2Size: 15,
+        heading2Size: 11,
         heading2Color: [67, 56, 202], // Indigo
+        heading2Align: 'center',
+        heading2Uppercase: true,
+        heading2Underline: false,
         heading3Font: 'times',
-        heading3Size: 12,
+        heading3Size: 9.5,
         heading3Color: [26, 32, 44], // Dark
         bodyFont: 'times',
-        bodySize: 10,
+        bodySize: 8.5,
         bodyColor: [15, 23, 42], // Slate 900
         accentColor: [67, 56, 202], // Indigo
+        bulletChar: '▪',
     },
     minimal: {
         heading1Font: 'helvetica',
-        heading1Size: 18,
+        heading1Size: 22,
         heading1Color: [5, 150, 105], // Emerald
+        heading1Align: 'left',
         heading2Font: 'helvetica',
-        heading2Size: 13,
+        heading2Size: 9.5,
         heading2Color: [5, 150, 105], // Emerald
+        heading2Align: 'left',
+        heading2Uppercase: true,
+        heading2Underline: false,
         heading3Font: 'helvetica',
-        heading3Size: 11,
+        heading3Size: 9,
         heading3Color: [6, 95, 70], // Dark Emerald
         bodyFont: 'helvetica',
-        bodySize: 10,
+        bodySize: 8,
         bodyColor: [15, 23, 42], // Slate 900
-        accentColor: [5, 150, 105], // Emerald
+        accentColor: [16, 185, 129], // Emerald (lighter for bullets)
+        bulletChar: '—',
     },
     technical: {
         heading1Font: 'courier',
-        heading1Size: 18,
-        heading1Color: [124, 58, 237], // Violet
+        heading1Size: 22,
+        heading1Color: [91, 33, 182], // Dark Violet
+        heading1Align: 'left',
         heading2Font: 'courier',
-        heading2Size: 12,
+        heading2Size: 10,
         heading2Color: [76, 29, 149], // Dark Violet
+        heading2Align: 'left',
+        heading2Uppercase: false,
+        heading2Underline: false,
         heading3Font: 'courier',
-        heading3Size: 11,
+        heading3Size: 9,
         heading3Color: [124, 58, 237], // Violet
         bodyFont: 'courier',
-        bodySize: 9,
+        bodySize: 9.5,
         bodyColor: [15, 23, 42], // Slate 900
         accentColor: [124, 58, 237], // Violet
+        bulletChar: '▶',
     },
 };
 
@@ -140,7 +165,9 @@ export function generateTextBasedPdf(
                         doc.setFont(template.heading1Font, 'bold');
                         doc.setFontSize(template.heading1Size);
                         doc.setTextColor(...template.heading1Color);
-                        currentY = addWrappedText(doc, section.text, margin, currentY, maxWidth, template.heading1Size * 0.6);
+                        const h1X = template.heading1Align === 'center' ? pageWidth / 2 : margin;
+                        const h1Align = template.heading1Align === 'center' ? 'center' : 'left';
+                        currentY = addWrappedText(doc, section.text, h1X, currentY, maxWidth, template.heading1Size * 0.6, h1Align);
                         currentY += lineHeight;
                         break;
 
@@ -148,7 +175,17 @@ export function generateTextBasedPdf(
                         doc.setFont(template.heading2Font, 'bold');
                         doc.setFontSize(template.heading2Size);
                         doc.setTextColor(...template.heading2Color);
-                        currentY = addWrappedText(doc, section.text.toUpperCase(), margin, currentY, maxWidth, template.heading2Size * 0.6);
+                        const h2Text = template.heading2Uppercase ? section.text.toUpperCase() : section.text;
+                        const h2X = template.heading2Align === 'center' ? pageWidth / 2 : margin;
+                        const h2Align = template.heading2Align === 'center' ? 'center' : 'left';
+                        currentY = addWrappedText(doc, h2Text, h2X, currentY, maxWidth, template.heading2Size * 0.6, h2Align);
+                        if (template.heading2Underline) {
+                            const textWidth = doc.getTextWidth(h2Text);
+                            const underlineX = template.heading2Align === 'center' ? (pageWidth / 2) - (textWidth / 2) : margin;
+                            doc.setDrawColor(...template.heading2Color);
+                            doc.line(underlineX, currentY, underlineX + textWidth, currentY);
+                            currentY += 1;
+                        }
                         currentY += lineHeight * 0.5;
                         break;
 
@@ -187,7 +224,7 @@ export function generateTextBasedPdf(
                                 currentY = margin;
                             }
                             doc.setTextColor(...template.accentColor);
-                            doc.text('•', margin, currentY);
+                            doc.text(template.bulletChar, margin, currentY);
                             doc.setTextColor(...template.bodyColor);
                             doc.text(line, margin + 5, currentY);
                             currentY += lineHeight;
@@ -300,7 +337,8 @@ function addWrappedText(
     x: number,
     y: number,
     maxWidth: number,
-    lineHeight: number
+    lineHeight: number,
+    align: 'left' | 'center' = 'left'
 ): number {
     const lines = doc.splitTextToSize(text, maxWidth);
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -311,7 +349,7 @@ function addWrappedText(
             doc.addPage();
             y = margin;
         }
-        doc.text(line, x, y);
+        doc.text(line, x, y, { align });
         y += lineHeight;
     }
 
