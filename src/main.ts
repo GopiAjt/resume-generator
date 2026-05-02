@@ -1,4 +1,5 @@
 import './assets/main.css'
+import './utils/mobilePolyfills'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

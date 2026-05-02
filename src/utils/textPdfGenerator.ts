@@ -51,10 +51,9 @@ const hexToRgb = (hex: string): [number, number, number] => {
   ]
 }
 
-const templates: Record<string, TemplateConfig> = Object.fromEntries(
-  Object.entries(resumeTemplateStyles).map(([key, style]) => [
-    key,
-    {
+const templates: Record<string, TemplateConfig> = Object.entries(resumeTemplateStyles).reduce(
+  (configs, [key, style]) => {
+    configs[key] = {
       heading1Font: style.pdfFontFamily,
       heading1Size: style.heading1Size,
       heading1Color: hexToRgb(style.heading1Color),
@@ -76,9 +75,12 @@ const templates: Record<string, TemplateConfig> = Object.fromEntries(
       metaAlign: style.metaAlign,
       accentColor: hexToRgb(style.accentColor),
       bulletChar: style.pdfBulletChar || style.bulletChar,
-    },
-  ]),
-) as Record<string, TemplateConfig>
+    }
+
+    return configs
+  },
+  {} as Record<string, TemplateConfig>,
+)
 
 const PT_TO_MM = 0.352778
 const SECTION_SPACING = {
