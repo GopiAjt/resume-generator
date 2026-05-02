@@ -5,6 +5,7 @@ interface PdfSection {
     type: 'heading1' | 'heading2' | 'heading3' | 'paragraph' | 'list' | 'meta';
     text: string;
     bold?: boolean;
+    inlineText?: Array<{ text: string; bold: boolean }>;
 }
 
 interface TemplateConfig {
@@ -137,8 +138,16 @@ export function generateTextBasedPdf(
             const pageHeight = doc.internal.pageSize.getHeight();
             const margin = 12.7; // 0.5 inch margin
             const maxWidth = pageWidth - (margin * 2);
-            const lineHeight = template.bodySize * 0.6;
             let currentY = margin;
+
+            // Helper function to check and handle page breaks
+            const checkPageBreak = (y: number, requiredSpace: number = template.bodySize * 0.5): number => {
+                if (y > pageHeight - margin - requiredSpace) {
+                    doc.addPage();
+                    return margin;
+                }
+                return y;
+            };
 
             // Parse markdown into sections
             const sections = parseMarkdownToSections(markdown);
@@ -154,11 +163,7 @@ export function generateTextBasedPdf(
 
             // Process each section
             for (const section of sections) {
-                // Check if we need a new page
-                if (currentY > pageHeight - margin) {
-                    doc.addPage();
-                    currentY = margin;
-                }
+                currentY = checkPageBreak(currentY);
 
                 switch (section.type) {
                     case 'heading1':
@@ -167,8 +172,9 @@ export function generateTextBasedPdf(
                         doc.setTextColor(...template.heading1Color);
                         const h1X = template.heading1Align === 'center' ? pageWidth / 2 : margin;
                         const h1Align = template.heading1Align === 'center' ? 'center' : 'left';
-                        currentY = addWrappedText(doc, section.text, h1X, currentY, maxWidth, template.heading1Size * 0.6, h1Align);
-                        currentY += lineHeight;
+                        const h1LineHeight = template.heading1Size * 0.5;
+                        currentY = addWrappedText(doc, section.text, h1X, currentY, maxWidth, h1LineHeight, h1Align, checkPageBreak);
+                        currentY += h1LineHeight;
                         break;
 
                     case 'heading2':
@@ -178,58 +184,77 @@ export function generateTextBasedPdf(
                         const h2Text = template.heading2Uppercase ? section.text.toUpperCase() : section.text;
                         const h2X = template.heading2Align === 'center' ? pageWidth / 2 : margin;
                         const h2Align = template.heading2Align === 'center' ? 'center' : 'left';
-                        currentY = addWrappedText(doc, h2Text, h2X, currentY, maxWidth, template.heading2Size * 0.6, h2Align);
+                        const h2LineHeight = template.heading2Size * 0.5;
+                        const beforeUnderlineY = currentY;
+                        currentY = addWrappedText(doc, h2Text, h2X, currentY, maxWidth, h2LineHeight, h2Align, checkPageBreak);
                         if (template.heading2Underline) {
                             const textWidth = doc.getTextWidth(h2Text);
                             const underlineX = template.heading2Align === 'center' ? (pageWidth / 2) - (textWidth / 2) : margin;
                             doc.setDrawColor(...template.heading2Color);
-                            doc.line(underlineX, currentY, underlineX + textWidth, currentY);
-                            currentY += 1;
+                            doc.setLineWidth(0.3);
+                            doc.line(underlineX, currentY + 1, underlineX + textWidth, currentY + 1);
+                            currentY += 2;
                         }
-                        currentY += lineHeight * 0.5;
+                        currentY += h2LineHeight * 0.5;
                         break;
 
                     case 'heading3':
                         doc.setFont(template.heading3Font, 'bold');
                         doc.setFontSize(template.heading3Size);
                         doc.setTextColor(...template.heading3Color);
-                        currentY = addWrappedText(doc, section.text, margin, currentY, maxWidth, template.heading3Size * 0.6);
-                        currentY += lineHeight * 0.3;
+                        const h3LineHeight = template.heading3Size * 0.5;
+                        currentY = addWrappedText(doc, section.text, margin, currentY, maxWidth, h3LineHeight, 'left', checkPageBreak);
+                        currentY += h3LineHeight * 0.3;
                         break;
 
                     case 'meta':
                         doc.setFont(template.bodyFont, 'normal');
                         doc.setFontSize(template.bodySize);
                         doc.setTextColor(...template.bodyColor);
-                        currentY = addWrappedText(doc, section.text, margin, currentY, maxWidth, lineHeight);
-                        currentY += lineHeight * 0.5;
+                        const metaLineHeight = template.bodySize * 0.5;
+                        currentY = addWrappedText(doc, section.text, margin, currentY, maxWidth, metaLineHeight, 'left', checkPageBreak);
+                        currentY += metaLineHeight * 0.5;
                         break;
 
                     case 'paragraph':
-                        doc.setFont(template.bodyFont, section.bold ? 'bold' : 'normal');
+                        doc.setFont(template.bodyFont, 'normal');
                         doc.setFontSize(template.bodySize);
                         doc.setTextColor(...template.bodyColor);
-                        currentY = addWrappedText(doc, section.text, margin, currentY, maxWidth, lineHeight);
-                        currentY += lineHeight * 0.5;
+                        const paraLineHeight = template.bodySize * 0.5;
+                        if (section.inlineText && section.inlineText.length > 0) {
+                            // Handle inline bold text
+                            currentY = addInlineText(doc, section.inlineText, margin, currentY, maxWidth, paraLineHeight, template.bodyFont, template.bodyColor, checkPageBreak);
+                        } else {
+                            doc.setFont(template.bodyFont, section.bold ? 'bold' : 'normal');
+                            currentY = addWrappedText(doc, section.text, margin, currentY, maxWidth, paraLineHeight, 'left', checkPageBreak);
+                        }
+                        currentY += paraLineHeight * 0.5;
                         break;
 
                     case 'list':
                         doc.setFont(template.bodyFont, 'normal');
                         doc.setFontSize(template.bodySize);
                         doc.setTextColor(...template.bodyColor);
-                        const lines = doc.splitTextToSize(section.text, maxWidth - 5);
-                        for (const line of lines) {
-                            if (currentY > pageHeight - margin) {
-                                doc.addPage();
-                                currentY = margin;
+                        const listLineHeight = template.bodySize * 0.5;
+                        const items = section.text.split('\n');
+                        for (const item of items) {
+                            currentY = checkPageBreak(currentY, listLineHeight);
+                            const lines = doc.splitTextToSize(item, maxWidth - 8);
+                            for (let i = 0; i < lines.length; i++) {
+                                currentY = checkPageBreak(currentY, listLineHeight);
+                                if (i === 0) {
+                                    doc.setTextColor(...template.accentColor);
+                                    doc.text(template.bulletChar, margin, currentY);
+                                    doc.setTextColor(...template.bodyColor);
+                                    doc.text(lines[i], margin + 8, currentY);
+                                } else {
+                                    // Wrapped lines align with text, not bullet
+                                    doc.text(lines[i], margin + 8, currentY);
+                                }
+                                currentY += listLineHeight;
                             }
-                            doc.setTextColor(...template.accentColor);
-                            doc.text(template.bulletChar, margin, currentY);
-                            doc.setTextColor(...template.bodyColor);
-                            doc.text(line, margin + 5, currentY);
-                            currentY += lineHeight;
                         }
-                        currentY += lineHeight * 0.3;
+                        currentY += listLineHeight * 0.3;
                         break;
                 }
             }
@@ -305,14 +330,32 @@ function parseMarkdownToSections(markdown: string): PdfSection[] {
                 bold: true
             });
         }
-        // Regular paragraph
-        else {
+        // Meta section (contact info - typically contains | separators)
+        else if (trimmed.includes('|') && !trimmed.startsWith('#')) {
             flushList(sections, currentList);
             currentList = [];
             sections.push({
-                type: 'paragraph',
+                type: 'meta',
                 text: trimmed
             });
+        }
+        // Regular paragraph - check for inline bold
+        else {
+            flushList(sections, currentList);
+            currentList = [];
+            const inlineText = parseInlineBold(trimmed);
+            if (inlineText.length > 1) {
+                sections.push({
+                    type: 'paragraph',
+                    text: trimmed,
+                    inlineText
+                });
+            } else {
+                sections.push({
+                    type: 'paragraph',
+                    text: trimmed
+                });
+            }
         }
     }
 
@@ -320,6 +363,41 @@ function parseMarkdownToSections(markdown: string): PdfSection[] {
     flushList(sections, currentList);
 
     return sections;
+}
+
+function parseInlineBold(text: string): Array<{ text: string; bold: boolean }> {
+    const parts: Array<{ text: string; bold: boolean }> = [];
+    const regex = /\*\*(.*?)\*\*/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+        // Add text before bold
+        if (match.index > lastIndex) {
+            const normalText = text.substring(lastIndex, match.index);
+            if (normalText) {
+                parts.push({ text: normalText, bold: false });
+            }
+        }
+        // Add bold text
+        parts.push({ text: match[1], bold: true });
+        lastIndex = regex.lastIndex;
+    }
+
+    // Add remaining text
+    if (lastIndex < text.length) {
+        const remainingText = text.substring(lastIndex);
+        if (remainingText) {
+            parts.push({ text: remainingText, bold: false });
+        }
+    }
+
+    // If no bold found, return empty array
+    if (parts.length === 0) {
+        return [];
+    }
+
+    return parts;
 }
 
 function flushList(sections: PdfSection[], currentList: string[]) {
@@ -338,20 +416,65 @@ function addWrappedText(
     y: number,
     maxWidth: number,
     lineHeight: number,
-    align: 'left' | 'center' = 'left'
+    align: 'left' | 'center' = 'left',
+    checkPageBreak?: (y: number, requiredSpace?: number) => number
 ): number {
     const lines = doc.splitTextToSize(text, maxWidth);
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 12.7;
 
     for (const line of lines) {
-        if (y > pageHeight - margin) {
-            doc.addPage();
-            y = margin;
+        if (checkPageBreak) {
+            y = checkPageBreak(y, lineHeight);
+        } else {
+            if (y > pageHeight - margin) {
+                doc.addPage();
+                y = margin;
+            }
         }
         doc.text(line, x, y, { align });
         y += lineHeight;
     }
 
     return y;
+}
+
+function addInlineText(
+    doc: jsPDF,
+    inlineText: Array<{ text: string; bold: boolean }>,
+    x: number,
+    y: number,
+    maxWidth: number,
+    lineHeight: number,
+    font: string,
+    color: [number, number, number],
+    checkPageBreak: (y: number, requiredSpace?: number) => number
+): number {
+    let currentX = x;
+    let currentY = y;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 12.7;
+
+    for (const part of inlineText) {
+        doc.setFont(font, part.bold ? 'bold' : 'normal');
+        doc.setTextColor(...color);
+
+        const words = part.text.split(' ');
+        for (const word of words) {
+            const wordWithSpace = word + ' ';
+            const wordWidth = doc.getTextWidth(wordWithSpace);
+
+            // Check if word fits on current line
+            if (currentX + wordWidth > x + maxWidth) {
+                currentX = x;
+                currentY += lineHeight;
+                currentY = checkPageBreak(currentY, lineHeight);
+            }
+
+            doc.text(word, currentX, currentY);
+            currentX += wordWidth;
+        }
+    }
+
+    return currentY;
 }
