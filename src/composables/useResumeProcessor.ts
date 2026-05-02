@@ -51,8 +51,9 @@ export function useResumeProcessor() {
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
                     const content = await page.getTextContent();
-                    const strings = content.items
-                        .map((item: any) => (typeof item.str === 'string' ? item.str : ''))
+                    const items = Array.isArray(content.items) ? content.items : [];
+                    const strings = items
+                        .map((item) => ('str' in item ? item.str : ''))
                         .filter(Boolean);
                     text += strings.join(' ') + '\n';
                 }
@@ -73,9 +74,9 @@ export function useResumeProcessor() {
             if (!extractedResumeText.value.trim()) {
                 throw new Error('Failed to extract text from the file. The file might be empty or scanned as an image.');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('Text extraction failed:', error);
-            errorMessage.value = error.message || 'Failed to read the resume file.';
+            errorMessage.value = error instanceof Error ? error.message : 'Failed to read the resume file.';
             throw error;
         } finally {
             isExtracting.value = false;
@@ -83,9 +84,15 @@ export function useResumeProcessor() {
     };
 
     const formatResumeHtml = async (markdown: string) => {
-        const rawHtml = await marked.parse(markdown)
-        const sanitizedHtml = DOMPurify.sanitize(rawHtml);
-        return sanitizedHtml.replace(/<p>(.*?)<\/p>/, '<p class="resume-meta">$1</p>');
+        if (!markdown) return '';
+        try {
+            const rawHtml = await marked.parse(markdown || '')
+            const sanitizedHtml = DOMPurify.sanitize(rawHtml || '');
+            return sanitizedHtml.replace(/<p>(.*?)<\/p>/, '<p class="resume-meta">$1</p>');
+        } catch (error) {
+            logger.error('Markdown parsing failed:', error);
+            return markdown; // Fallback to original markdown
+        }
     }
 
     return {

@@ -13,7 +13,7 @@ defineEmits<{
 <template>
     <div class="template-selector">
         <div class="template-options">
-            <div v-for="temp in templates" :key="temp.id" class="template-card"
+            <div v-for="temp in (templates || [])" :key="temp.id" class="template-card"
                 :class="{ 'active': modelValue === temp.id }" @click="$emit('update:modelValue', temp.id)">
                 <div class="template-icon">{{ temp.icon }}</div>
                 <div class="template-info">

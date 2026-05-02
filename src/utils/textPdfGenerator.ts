@@ -51,7 +51,7 @@ const hexToRgb = (hex: string): [number, number, number] => {
   ]
 }
 
-const templates: Record<string, TemplateConfig> = Object.entries(resumeTemplateStyles).reduce(
+const templates: Record<string, TemplateConfig> = Object.entries(resumeTemplateStyles || {}).reduce(
   (configs, [key, style]) => {
     configs[key] = {
       heading1Font: style.pdfFontFamily,
@@ -118,6 +118,11 @@ export function generateTextBasedPdf(
         orientation: 'portrait',
       })
 
+      // Verify jsPDF methods are available (mobile compatibility check)
+      if (typeof doc.splitTextToSize !== 'function') {
+        throw new Error('jsPDF splitTextToSize method not available on this browser')
+      }
+
       // Get template configuration
       const template = templates[selectedTemplate] || templates.modern
       if (!template) {
@@ -144,7 +149,7 @@ export function generateTextBasedPdf(
       }
 
       // Parse markdown into sections
-      const sections = parseMarkdownToSections(markdown)
+      const sections = parseMarkdownToSections(markdown) || []
 
       // Add metadata
       const fileName = companyName ? `Resume — ${companyName}` : 'Resume'
@@ -517,7 +522,15 @@ function addWrappedText(
   align: 'left' | 'center' = 'left',
   checkPageBreak?: (y: number, requiredSpace?: number) => number,
 ): number {
-  const lines = doc.splitTextToSize(text, maxWidth)
+  let lines: string[]
+  try {
+    const result = doc.splitTextToSize(text, maxWidth)
+    lines = Array.isArray(result) ? result : []
+  } catch (error) {
+    logger.error('splitTextToSize failed:', error)
+    lines = [text] // Fallback to original text
+  }
+
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 12.7
 

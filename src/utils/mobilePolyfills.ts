@@ -47,7 +47,7 @@ if (!stringPrototype.at) {
   })
 }
 
-;[
+const typedArrayConstructors = [
   Int8Array,
   Uint8Array,
   Uint8ClampedArray,
@@ -59,8 +59,10 @@ if (!stringPrototype.at) {
   Float64Array,
   typeof BigInt64Array === 'undefined' ? undefined : BigInt64Array,
   typeof BigUint64Array === 'undefined' ? undefined : BigUint64Array,
-].forEach((typedArrayConstructor) => {
-  if (typedArrayConstructor && !(typedArrayConstructor.prototype as AtCapable<object>).at) {
+].filter((constructor): constructor is typeof Int8Array => constructor !== undefined)
+
+typedArrayConstructors.forEach((typedArrayConstructor) => {
+  if (!(typedArrayConstructor.prototype as AtCapable<object>).at) {
     defineValue(typedArrayConstructor.prototype, 'at', at)
   }
 })
@@ -75,5 +77,21 @@ if (!promiseConstructor.withResolvers) {
     })
 
     return { promise, resolve, reject }
+  })
+}
+
+// Polyfill for Symbol.iterator to fix mobile Safari for...of loop issues
+if (typeof Symbol !== 'undefined' && !Array.prototype[Symbol.iterator]) {
+  defineValue(Array.prototype, Symbol.iterator, function (this: unknown[]) {
+    let index = 0
+    const array = this
+    return {
+      next: function () {
+        return {
+          value: array[index],
+          done: index++ >= array.length
+        }
+      }
+    }
   })
 }

@@ -44,8 +44,8 @@ defineProps<{
         </div>
         <div class="report-content">
             <ul class="report-list">
-                <li v-for="(item, index) in optimizationReport" :key="index" class="report-item glass-card slide-in"
-                    :style="{ animationDelay: `${index * 0.1}s` }">
+                <li v-for="(item, index) in (optimizationReport || [])" :key="index"
+                    class="report-item glass-card slide-in" :style="{ animationDelay: `${index * 0.1}s` }">
                     <div class="report-item-header">
                         <span class="report-category">
                             <span class="dot"></span>
