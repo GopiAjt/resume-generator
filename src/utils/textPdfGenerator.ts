@@ -51,8 +51,20 @@ const hexToRgb = (hex: string): [number, number, number] => {
   ]
 }
 
-const templates: Record<string, TemplateConfig> = Object.entries(resumeTemplateStyles || {}).reduce(
-  (configs, [key, style]) => {
+const buildTemplateConfigs = (): Record<string, TemplateConfig> => {
+  const configs: Record<string, TemplateConfig> = {}
+  const styles = resumeTemplateStyles || {}
+
+  for (const key in styles) {
+    if (!Object.prototype.hasOwnProperty.call(styles, key)) {
+      continue
+    }
+
+    const style = styles[key]
+    if (!style) {
+      continue
+    }
+
     configs[key] = {
       heading1Font: style.pdfFontFamily,
       heading1Size: style.heading1Size,
@@ -76,11 +88,12 @@ const templates: Record<string, TemplateConfig> = Object.entries(resumeTemplateS
       accentColor: hexToRgb(style.accentColor),
       bulletChar: style.pdfBulletChar || style.bulletChar,
     }
+  }
 
-    return configs
-  },
-  {} as Record<string, TemplateConfig>,
-)
+  return configs
+}
+
+const templates: Record<string, TemplateConfig> = buildTemplateConfigs()
 
 const PT_TO_MM = 0.352778
 const SECTION_SPACING = {
@@ -100,6 +113,14 @@ function ptToMm(value: number): number {
 
 function getLineHeightMm(fontSizePt: number, multiplier: number = 1.3): number {
   return ptToMm(fontSizePt * multiplier)
+}
+
+function setTextColor(doc: jsPDF, color: [number, number, number]) {
+  doc.setTextColor(color[0], color[1], color[2])
+}
+
+function setDrawColor(doc: jsPDF, color: [number, number, number]) {
+  doc.setDrawColor(color[0], color[1], color[2])
 }
 
 export function generateTextBasedPdf(
@@ -170,7 +191,7 @@ export function generateTextBasedPdf(
           case 'heading1':
             doc.setFont(template.heading1Font, 'bold')
             doc.setFontSize(template.heading1Size)
-            doc.setTextColor(...template.heading1Color)
+            setTextColor(doc, template.heading1Color)
             const h1X = template.heading1Align === 'center' ? pageWidth / 2 : margin
             const h1Align = template.heading1Align === 'center' ? 'center' : 'left'
             const h1LineHeight = getLineHeightMm(template.heading1Size)
@@ -190,7 +211,7 @@ export function generateTextBasedPdf(
           case 'heading2':
             doc.setFont(template.heading2Font, 'bold')
             doc.setFontSize(template.heading2Size)
-            doc.setTextColor(...template.heading2Color)
+            setTextColor(doc, template.heading2Color)
             const h2Text = template.heading2Uppercase ? section.text.toUpperCase() : section.text
             const h2X = template.heading2Align === 'center' ? pageWidth / 2 : margin
             const h2Align = template.heading2Align === 'center' ? 'center' : 'left'
@@ -206,7 +227,7 @@ export function generateTextBasedPdf(
               checkPageBreak,
             )
             if (template.heading2Underline) {
-              doc.setDrawColor(...template.heading2Color)
+              setDrawColor(doc, template.heading2Color)
               doc.setLineWidth(0.3)
               doc.line(margin, currentY + ptToMm(1), margin + maxWidth, currentY + ptToMm(1))
             }
@@ -216,7 +237,7 @@ export function generateTextBasedPdf(
           case 'heading3':
             doc.setFont(template.heading3Font, 'bold')
             doc.setFontSize(template.heading3Size)
-            doc.setTextColor(...template.heading3Color)
+            setTextColor(doc, template.heading3Color)
             const h3LineHeight = getLineHeightMm(template.heading3Size)
             currentY = addWrappedText(
               doc,
@@ -234,7 +255,7 @@ export function generateTextBasedPdf(
           case 'meta':
             doc.setFont(template.bodyFont, 'normal')
             doc.setFontSize(template.metaSize)
-            doc.setTextColor(...template.metaColor)
+            setTextColor(doc, template.metaColor)
             const metaLineHeight = getLineHeightMm(template.metaSize)
             const metaX = template.metaAlign === 'center' ? pageWidth / 2 : margin
             currentY = addWrappedText(
@@ -253,7 +274,7 @@ export function generateTextBasedPdf(
           case 'paragraph':
             doc.setFont(template.bodyFont, 'normal')
             doc.setFontSize(template.bodySize)
-            doc.setTextColor(...template.bodyColor)
+            setTextColor(doc, template.bodyColor)
             const paraLineHeight = getLineHeightMm(template.bodySize)
             if (section.inlineText && section.inlineText.length > 0) {
               // Handle inline bold text
@@ -287,15 +308,15 @@ export function generateTextBasedPdf(
           case 'list':
             doc.setFont(template.bodyFont, 'normal')
             doc.setFontSize(template.bodySize)
-            doc.setTextColor(...template.bodyColor)
+            setTextColor(doc, template.bodyColor)
             const listLineHeight = getLineHeightMm(template.bodySize)
             const items = section.text.split('\n')
             for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
               const item = items[itemIndex]!
               currentY = checkPageBreak(currentY, listLineHeight)
-              doc.setTextColor(...template.accentColor)
+              setTextColor(doc, template.accentColor)
               doc.text(template.bulletChar, margin, currentY)
-              doc.setTextColor(...template.bodyColor)
+              setTextColor(doc, template.bodyColor)
 
               const inlineItemText = parseInlineBold(item)
               if (inlineItemText.length > 0) {
@@ -572,7 +593,7 @@ function addInlineText(
   for (let partIndex = 0; partIndex < inlineText.length; partIndex += 1) {
     const part = inlineText[partIndex]!
     doc.setFont(font, part.bold ? 'bold' : 'normal')
-    doc.setTextColor(...color)
+    setTextColor(doc, color)
 
     const tokens = part.text.split(/(\s+)/).filter((token) => token.length > 0)
     for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex += 1) {

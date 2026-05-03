@@ -5,23 +5,22 @@ import { logger } from '@/utils/logger';
 import { generateTextBasedPdf } from '@/utils/textPdfGenerator';
 
 export function useResumeExporter() {
-    const isMobileWebKit = () => {
+    const isIOSWebKit = () => {
         if (typeof navigator === 'undefined') {
             return false;
         }
 
         const ua = navigator.userAgent || navigator.vendor || '';
-        const isIOS = /iPad|iPhone|iPod/.test(ua);
-        const isAndroidWebKit = /Android/.test(ua) && /AppleWebKit/i.test(ua);
+        const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-        return isIOS || isAndroidWebKit;
+        return isIOS && /AppleWebKit/i.test(ua);
     };
 
     const triggerBlobDownload = async (blob: Blob, fileName: string) => {
         const objectUrl = URL.createObjectURL(blob);
 
         try {
-            if (isMobileWebKit()) {
+            if (isIOSWebKit()) {
                 const dataUrl = await new Promise<string>((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onloadend = () => resolve(String(reader.result || ''));
@@ -29,13 +28,7 @@ export function useResumeExporter() {
                     reader.readAsDataURL(blob);
                 });
 
-                const mobileLink = document.createElement('a');
-                mobileLink.style.display = 'none';
-                mobileLink.href = dataUrl;
-                mobileLink.download = fileName;
-                document.body.appendChild(mobileLink);
-                mobileLink.click();
-                document.body.removeChild(mobileLink);
+                window.location.href = dataUrl.replace(/^data:[^;]*;/, 'data:attachment/file;');
                 return;
             }
 
