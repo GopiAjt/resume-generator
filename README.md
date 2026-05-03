@@ -12,7 +12,7 @@ An AI-powered resume optimization tool that helps you create tailored, ATS-frien
 - **Export Options**: Download as PDF, DOC, or copy formatted content to clipboard
 - **Real-time Preview**: See your tailored resume with live template switching
 - **Optimization Reports**: View detailed analysis of ATS score improvements
-- **Privacy-Focused**: All processing happens client-side; your data stays on your device
+- **Privacy-Conscious Workflow**: PDF/DOCX text extraction happens in the browser; resume text and job descriptions are sent to Gemini only for AI optimization
 
 ## Tech Stack
 
@@ -120,7 +120,7 @@ src/
 
 1. **Upload or Enter Resume**: Upload your existing resume (PDF/DOCX) or enter details manually
 2. **Provide Job Description**: Paste the target job description
-3. **AI Processing**: Gemini AI analyzes the JD and optimizes your resume
+3. **AI Processing**: The app extracts file text locally, then Gemini AI analyzes the resume text and JD to optimize your resume
 4. **Preview & Customize**: View the tailored resume and switch between templates
 5. **Export**: Download as PDF, DOC, or copy to clipboard
 

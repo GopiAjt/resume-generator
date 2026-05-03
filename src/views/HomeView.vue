@@ -39,7 +39,7 @@
 
         <div class="hero-proof fade-in" style="animation-delay: 420ms">
           <span>✅ No account needed</span>
-          <span>✅ Data stays on your device</span>
+          <span>✅ Local file parsing</span>
           <span>✅ Works with PDF & DOCX</span>
         </div>
       </div>
@@ -59,8 +59,8 @@
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
-          <span class="stat-number">100%</span>
-          <span class="stat-label">Private — Data Never Leaves Your Browser</span>
+          <span class="stat-number">0</span>
+          <span class="stat-label">Accounts or App-Side Resume Storage</span>
         </div>
       </div>
     </section>
@@ -172,8 +172,9 @@
               <path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
-          <h3>100% Private</h3>
-          <p>Your resume and job description are never stored on any server. Everything runs in your browser.</p>
+          <h3>Privacy-Conscious Workflow</h3>
+          <p>Your files are parsed in your browser, then only the resume text and job description are sent to AI for
+            tailoring.</p>
         </div>
 
         <div class="feature-card">

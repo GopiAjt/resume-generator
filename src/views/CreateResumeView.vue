@@ -11,12 +11,12 @@ import TemplateSelector from '@/components/resume/TemplateSelector.vue'
 import ResumeActions from '@/components/resume/ResumeActions.vue'
 import ResumePaper from '@/components/resume/ResumePaper.vue'
 import OptimizationReport from '@/components/resume/OptimizationReport.vue'
+import type { OptimizationItem } from '@/services/gemini'
 
 // Composables & Utils
 import { useResumeProcessor } from '@/composables/useResumeProcessor'
 import { useResumeExporter } from '@/composables/useResumeExporter'
 import { useToast } from '@/composables/useToast'
-import { getScoreClass } from '@/utils/resumeUtils'
 import { TEST_COMPANY_NAME, TEST_JOB_DESCRIPTION, TEST_RESUME_MARKDOWN } from '@/utils/testResume'
 
 // Constants
@@ -34,7 +34,7 @@ const generatedResume = ref('')
 const generatedResumeHtml = ref('')
 const originalAtsScore = ref(0)
 const atsScore = ref(0)
-const optimizationReport = ref<any[]>([])
+const optimizationReport = ref<OptimizationItem[]>([])
 const errorMessage = ref('')
 const selectedTemplate = ref('modern')
 
@@ -107,8 +107,8 @@ const handleFileChange = async (event: Event) => {
                 resumeFile.value = null
                 target.value = ''
             }
-        } catch (err: any) {
-            const msg = err?.message || extractionError.value || 'Failed to read the resume file.'
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : extractionError.value || 'Failed to read the resume file.'
             showToast(msg, 'error')
             resumeFile.value = null
             target.value = ''
@@ -159,9 +159,9 @@ const handleSubmit = async () => {
             atsScore.value = response.ats_score
             optimizationReport.value = response.optimization_report
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         logger.error('Failed to generate resume:', error)
-        const msg = error.message || ''
+        const msg = error instanceof Error ? error.message : ''
         if (msg.includes('503') || msg.toLowerCase().includes('high demand')) {
             showToast('Gemini is currently under high demand. Please wait a few moments and try again!', 'warning')
         } else {

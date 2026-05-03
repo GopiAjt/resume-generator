@@ -127,7 +127,7 @@ export function useResumeExporter() {
             })];
             await navigator.clipboard.write(data);
             onSuccess('Formatted resume copied to clipboard!');
-        } catch (err) {
+        } catch {
             try {
                 await navigator.clipboard.writeText(generatedResumeMarkdown);
                 onSuccess('Resume Markdown copied to clipboard!');

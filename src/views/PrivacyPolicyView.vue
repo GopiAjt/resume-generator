@@ -30,7 +30,7 @@
       <h2>3. Data Storage and Processing</h2>
       <p><strong>Client-Side Processing:</strong> All file processing (PDF/DOCX text extraction) happens locally in your browser.</p>
       <p><strong>AI Processing:</strong> Your resume and job description data are sent to Google's Gemini API for processing. Google's privacy policy applies to data sent to their service.</p>
-      <p><strong>No Persistent Storage:</strong> We do not store your resume data on our servers. Once your session ends, the data is cleared from your browser.</p>
+      <p><strong>No App-Side Resume Storage:</strong> Resume content is not saved by ResumeGen. Data sent to Google Gemini is governed by Google's own policies.</p>
     </section>
 
     <section class="policy-section">
@@ -47,7 +47,7 @@
       <p>We implement appropriate security measures to protect your information:</p>
       <ul>
         <li>All data transmission uses HTTPS encryption</li>
-        <li>We use security headers (CSP, HSTS, X-Frame-Options)</li>
+        <li>We use deployment security headers such as X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and Permissions-Policy</li>
         <li>We sanitize all user inputs to prevent XSS attacks</li>
         <li>We do not store sensitive data on our servers</li>
       </ul>

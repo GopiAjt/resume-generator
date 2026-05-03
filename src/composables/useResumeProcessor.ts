@@ -5,16 +5,24 @@ import DOMPurify from 'dompurify';
 import { logger } from '@/utils/logger';
 import { pdfjsLib } from '@/utils/pdfjs';
 import Tesseract from 'tesseract.js';
+import type { PDFPageProxy } from 'pdfjs-dist/types/src/display/api';
 
 const MIN_TEXT_CHARS_PER_PAGE = 40;
 const DESKTOP_OCR_SCALE = 2.0;
 const MOBILE_OCR_SCALE = 1.5;
 const MAX_OCR_CANVAS_SIDE = 2200;
 
-type PdfPageLike = {
-    getViewport: (options: { scale: number }) => any;
-    getTextContent: () => Promise<any>;
-    render: (options: any) => { promise: Promise<void> };
+type PdfTextContentLike = {
+    items?: unknown[];
+};
+
+type PdfTextItem = {
+    str?: string;
+};
+
+type OcrProgress = {
+    status?: string;
+    progress: number;
 };
 
 const readFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
@@ -44,7 +52,7 @@ const isLikelyMobileBrowser = () => {
     return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 };
 
-const getOcrViewport = (page: PdfPageLike) => {
+const getOcrViewport = (page: PDFPageProxy) => {
     const baseScale = isLikelyMobileBrowser() ? MOBILE_OCR_SCALE : DESKTOP_OCR_SCALE;
     const viewport = page.getViewport({ scale: baseScale });
     const largestSide = Math.max(viewport.width, viewport.height);
@@ -57,7 +65,7 @@ const getOcrViewport = (page: PdfPageLike) => {
     return page.getViewport({ scale: cappedScale });
 };
 
-const extractTextFromPdfPageWithOCR = async (page: PdfPageLike, pageNumber: number): Promise<string> => {
+const extractTextFromPdfPageWithOCR = async (page: PDFPageProxy, pageNumber: number): Promise<string> => {
     const viewport = getOcrViewport(page);
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -79,7 +87,7 @@ const extractTextFromPdfPageWithOCR = async (page: PdfPageLike, pageNumber: numb
         canvas,
         'eng',
         {
-            logger: (m: any) => {
+            logger: (m: OcrProgress) => {
                 if (m.status === 'recognizing text') {
                     logger.info(`OCR Page ${pageNumber} Progress: ${(m.progress * 100).toFixed(0)}%`);
                 }
@@ -95,10 +103,19 @@ const extractTextFromPdfPageWithOCR = async (page: PdfPageLike, pageNumber: numb
 
 const isUsefulPdfText = (text: string) => text.replace(/\s+/g, '').length >= MIN_TEXT_CHARS_PER_PAGE;
 
-const extractTextFromPdfPage = async (page: PdfPageLike, pageNumber: number): Promise<string> => {
-    const content = await page.getTextContent();
+const getPdfTextItemString = (item: unknown): string => {
+    if (typeof item === 'object' && item !== null && 'str' in item) {
+        const text = (item as PdfTextItem).str;
+        return typeof text === 'string' ? text : '';
+    }
+
+    return '';
+};
+
+const extractTextFromPdfPage = async (page: PDFPageProxy, pageNumber: number): Promise<string> => {
+    const content = await page.getTextContent() as PdfTextContentLike;
     const items = Array.isArray(content.items) ? content.items : [];
-    const strings = items.map((item: { str?: string }) => item.str || '').filter(Boolean);
+    const strings = items.map(getPdfTextItemString).filter(Boolean);
     const text = strings.join(' ').trim();
 
     if (isUsefulPdfText(text)) {

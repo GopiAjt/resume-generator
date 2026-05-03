@@ -25,7 +25,7 @@ const defineValue = <T extends object, K extends PropertyKey>(target: T, key: K,
 }
 
 const arrayPrototype = Array.prototype as AtCapable<Array<unknown>>
-const stringPrototype = String.prototype as AtCapable<String>
+const stringPrototype = String.prototype as AtCapable<string>
 const promiseConstructor = Promise as PromiseConstructorWithResolvers
 
 const at = function at<T>(this: ArrayLike<T>, index: number): T | undefined {
@@ -85,15 +85,12 @@ const defineArrayLikeIterator = <T extends object>(prototype: T) => {
 
   defineValue(prototype, Symbol.iterator, function (this: ArrayLike<unknown>) {
     let index = 0
-    const array = this
 
     return {
-      next: function () {
-        return {
-          value: array[index],
-          done: index++ >= array.length,
-        }
-      },
+      next: () => ({
+        value: this[index],
+        done: index++ >= this.length,
+      }),
     }
   })
 }
