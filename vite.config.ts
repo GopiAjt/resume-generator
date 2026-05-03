@@ -11,6 +11,10 @@ export default defineConfig({
     // Remove devtools from production build
     process.env.NODE_ENV === 'development' ? vueDevTools() : []
   ],
+  server: {
+    host: '0.0.0.0',
+    port: 5173,
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

@@ -8,6 +8,10 @@ type AtCapable<T> = T & {
   at?: (index: number) => unknown
 }
 
+type IterableCapable<T> = T & {
+  [Symbol.iterator]?: () => Iterator<unknown>
+}
+
 type PromiseConstructorWithResolvers = PromiseConstructor & {
   withResolvers?: <T>() => PromiseWithResolvers<T>
 }
@@ -61,6 +65,39 @@ const typedArrayConstructors = [
   typeof BigUint64Array === 'undefined' ? undefined : BigUint64Array,
 ].filter((constructor): constructor is typeof Int8Array => constructor !== undefined)
 
+const hasWorkingIterator = (value: unknown): boolean => {
+  if (typeof Symbol === 'undefined') return false
+
+  try {
+    const iterator = (value as Iterable<unknown>)[Symbol.iterator]
+    if (typeof iterator !== 'function') return false
+
+    const result = iterator.call(value)
+    return !!result && typeof result.next === 'function'
+  } catch {
+    return false
+  }
+}
+
+const defineArrayLikeIterator = <T extends object>(prototype: T) => {
+  if (typeof Symbol === 'undefined') return
+  if (hasWorkingIterator(prototype)) return
+
+  defineValue(prototype, Symbol.iterator, function (this: ArrayLike<unknown>) {
+    let index = 0
+    const array = this
+
+    return {
+      next: function () {
+        return {
+          value: array[index],
+          done: index++ >= array.length,
+        }
+      },
+    }
+  })
+}
+
 typedArrayConstructors.forEach((typedArrayConstructor) => {
   if (!(typedArrayConstructor.prototype as AtCapable<object>).at) {
     defineValue(typedArrayConstructor.prototype, 'at', at)
@@ -80,36 +117,19 @@ if (!promiseConstructor.withResolvers) {
   })
 }
 
-// Polyfill for Symbol.iterator to fix mobile Safari for...of loop issues
-if (typeof Symbol !== 'undefined' && !Array.prototype[Symbol.iterator]) {
-  defineValue(Array.prototype, Symbol.iterator, function (this: unknown[]) {
-    let index = 0
-    const array = this
-    return {
-      next: function () {
-        return {
-          value: array[index],
-          done: index++ >= array.length
-        }
-      }
-    }
-  })
-}
+defineArrayLikeIterator(Array.prototype)
 
 // Polyfill for TypedArray Symbol.iterator (for Uint8Array, etc. used by PDF.js)
 typedArrayConstructors.forEach((typedArrayConstructor) => {
-  if (typeof Symbol !== 'undefined' && !(typedArrayConstructor.prototype as ArrayLike<number> & Iterable<number>)[Symbol.iterator]) {
-    defineValue(typedArrayConstructor.prototype, Symbol.iterator, function (this: ArrayLike<number>) {
-      let index = 0
-      const array = this
-      return {
-        next: function () {
-          return {
-            value: array[index],
-            done: index++ >= array.length
-          }
-        }
-      }
-    })
+  defineArrayLikeIterator(typedArrayConstructor.prototype as IterableCapable<ArrayLike<number>>)
+})
+
+;[
+  typeof NodeList === 'undefined' ? undefined : NodeList,
+  typeof HTMLCollection === 'undefined' ? undefined : HTMLCollection,
+  typeof FileList === 'undefined' ? undefined : FileList,
+].forEach((constructor) => {
+  if (constructor) {
+    defineArrayLikeIterator(constructor.prototype)
   }
 })

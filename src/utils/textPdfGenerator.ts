@@ -161,7 +161,8 @@ export function generateTextBasedPdf(
       })
 
       // Process each section
-      for (const section of sections) {
+      for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex += 1) {
+        const section = sections[sectionIndex]!
         currentY = checkPageBreak(currentY)
         currentY += getSpacingBeforeSection(section.type, previousSectionType)
 
@@ -289,7 +290,8 @@ export function generateTextBasedPdf(
             doc.setTextColor(...template.bodyColor)
             const listLineHeight = getLineHeightMm(template.bodySize)
             const items = section.text.split('\n')
-            for (const item of items) {
+            for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
+              const item = items[itemIndex]!
               currentY = checkPageBreak(currentY, listLineHeight)
               doc.setTextColor(...template.accentColor)
               doc.text(template.bulletChar, margin, currentY)
@@ -343,7 +345,8 @@ function parseMarkdownToSections(markdown: string): PdfSection[] {
   const lines = markdown.split('\n')
   let currentList: string[] = []
 
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex]!
     const trimmed = line.trim()
 
     // Empty line - flush any current list
@@ -534,7 +537,8 @@ function addWrappedText(
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 12.7
 
-  for (const line of lines) {
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex]!
     if (checkPageBreak) {
       y = checkPageBreak(y, lineHeight)
     } else {
@@ -565,12 +569,14 @@ function addInlineText(
   let currentY = y
   let hasRenderedTextOnLine = false
 
-  for (const part of inlineText) {
+  for (let partIndex = 0; partIndex < inlineText.length; partIndex += 1) {
+    const part = inlineText[partIndex]!
     doc.setFont(font, part.bold ? 'bold' : 'normal')
     doc.setTextColor(...color)
 
     const tokens = part.text.split(/(\s+)/).filter((token) => token.length > 0)
-    for (const token of tokens) {
+    for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex += 1) {
+      const token = tokens[tokenIndex]!
       const isWhitespace = /^\s+$/.test(token)
       const tokenWidth = doc.getTextWidth(token)
 

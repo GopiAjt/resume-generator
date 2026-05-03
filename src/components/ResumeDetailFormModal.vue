@@ -154,7 +154,7 @@ const handleSubmit = () => {
                             <h3>Experience</h3>
                             <button type="button" @click="addExperience" class="btn-add">+ Add More</button>
                         </div>
-                        <div v-for="(exp, index) in form.experience" :key="index" class="dynamic-item">
+                        <div v-for="(exp, index) in (form.experience || [])" :key="index" class="dynamic-item">
                             <div class="grid-form">
                                 <div class="form-group">
                                     <label>Company</label>
@@ -185,7 +185,7 @@ const handleSubmit = () => {
                             <h3>Projects</h3>
                             <button type="button" @click="addProject" class="btn-add">+ Add More</button>
                         </div>
-                        <div v-for="(proj, index) in form.projects" :key="index" class="dynamic-item">
+                        <div v-for="(proj, index) in (form.projects || [])" :key="index" class="dynamic-item">
                             <div class="form-group">
                                 <label>Project Name</label>
                                 <input v-model="proj.name" placeholder="Portfolio Website" />
@@ -206,7 +206,7 @@ const handleSubmit = () => {
                             <h3>Education</h3>
                             <button type="button" @click="addEducation" class="btn-add">+ Add More</button>
                         </div>
-                        <div v-for="(edu, index) in form.education" :key="index" class="dynamic-item">
+                        <div v-for="(edu, index) in (form.education || [])" :key="index" class="dynamic-item">
                             <div class="grid-form">
                                 <div class="form-group">
                                     <label>Degree</label>
