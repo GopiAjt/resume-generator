@@ -95,3 +95,21 @@ if (typeof Symbol !== 'undefined' && !Array.prototype[Symbol.iterator]) {
     }
   })
 }
+
+// Polyfill for TypedArray Symbol.iterator (for Uint8Array, etc. used by PDF.js)
+typedArrayConstructors.forEach((typedArrayConstructor) => {
+  if (typeof Symbol !== 'undefined' && !(typedArrayConstructor.prototype as ArrayLike<number> & Iterable<number>)[Symbol.iterator]) {
+    defineValue(typedArrayConstructor.prototype, Symbol.iterator, function (this: ArrayLike<number>) {
+      let index = 0
+      const array = this
+      return {
+        next: function () {
+          return {
+            value: array[index],
+            done: index++ >= array.length
+          }
+        }
+      }
+    })
+  }
+})

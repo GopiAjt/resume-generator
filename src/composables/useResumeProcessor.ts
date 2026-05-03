@@ -4,6 +4,18 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { logger } from '@/utils/logger';
 import { pdfjsLib } from '@/utils/pdfjs';
+import Tesseract from 'tesseract.js';
+
+const MIN_TEXT_CHARS_PER_PAGE = 40;
+const DESKTOP_OCR_SCALE = 2.0;
+const MOBILE_OCR_SCALE = 1.5;
+const MAX_OCR_CANVAS_SIDE = 2200;
+
+type PdfPageLike = {
+    getViewport: (options: { scale: number }) => any;
+    getTextContent: () => Promise<any>;
+    render: (options: any) => { promise: Promise<void> };
+};
 
 const readFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
     if (typeof file.arrayBuffer === 'function') {
@@ -24,6 +36,79 @@ const readFileAsArrayBuffer = (file: File): Promise<ArrayBuffer> => {
         reader.onerror = () => reject(reader.error || new Error('Failed to read the selected file.'));
         reader.readAsArrayBuffer(file);
     });
+};
+
+const isLikelyMobileBrowser = () => {
+    if (typeof navigator === 'undefined') return false;
+
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+};
+
+const getOcrViewport = (page: PdfPageLike) => {
+    const baseScale = isLikelyMobileBrowser() ? MOBILE_OCR_SCALE : DESKTOP_OCR_SCALE;
+    const viewport = page.getViewport({ scale: baseScale });
+    const largestSide = Math.max(viewport.width, viewport.height);
+
+    if (largestSide <= MAX_OCR_CANVAS_SIDE) {
+        return viewport;
+    }
+
+    const cappedScale = baseScale * (MAX_OCR_CANVAS_SIDE / largestSide);
+    return page.getViewport({ scale: cappedScale });
+};
+
+const extractTextFromPdfPageWithOCR = async (page: PdfPageLike, pageNumber: number): Promise<string> => {
+    const viewport = getOcrViewport(page);
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    if (!context) {
+        throw new Error('Failed to get canvas context for OCR');
+    }
+
+    canvas.height = Math.ceil(viewport.height);
+    canvas.width = Math.ceil(viewport.width);
+
+    await page.render({
+        canvas,
+        canvasContext: context,
+        viewport,
+    }).promise;
+
+    const { data: { text: ocrText } } = await Tesseract.recognize(
+        canvas,
+        'eng',
+        {
+            logger: (m: any) => {
+                if (m.status === 'recognizing text') {
+                    logger.info(`OCR Page ${pageNumber} Progress: ${(m.progress * 100).toFixed(0)}%`);
+                }
+            }
+        }
+    );
+
+    canvas.width = 0;
+    canvas.height = 0;
+
+    return ocrText;
+};
+
+const isUsefulPdfText = (text: string) => text.replace(/\s+/g, '').length >= MIN_TEXT_CHARS_PER_PAGE;
+
+const extractTextFromPdfPage = async (page: PdfPageLike, pageNumber: number): Promise<string> => {
+    const content = await page.getTextContent();
+    const items = Array.isArray(content.items) ? content.items : [];
+    const strings = items.map((item: { str?: string }) => item.str || '').filter(Boolean);
+    const text = strings.join(' ').trim();
+
+    if (isUsefulPdfText(text)) {
+        return text;
+    }
+
+    logger.info(`Low or no text found on PDF page ${pageNumber}, attempting OCR...`);
+    const ocrText = await extractTextFromPdfPageWithOCR(page, pageNumber);
+
+    return isUsefulPdfText(ocrText) || !text ? ocrText : `${text}\n${ocrText}`;
 };
 
 export function useResumeProcessor() {
@@ -48,15 +133,12 @@ export function useResumeProcessor() {
                     isOffscreenCanvasSupported: false,
                 }).promise;
                 let text = '';
+
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
-                    const content = await page.getTextContent();
-                    const items = Array.isArray(content.items) ? content.items : [];
-                    const strings = items
-                        .map((item) => ('str' in item ? item.str : ''))
-                        .filter(Boolean);
-                    text += strings.join(' ') + '\n';
+                    text += `${await extractTextFromPdfPage(page, i)}\n`;
                 }
+                
                 extractedResumeText.value = text;
                 logger.info('Extracted PDF Text:', text);
             } else if (
@@ -72,7 +154,7 @@ export function useResumeProcessor() {
             }
 
             if (!extractedResumeText.value.trim()) {
-                throw new Error('Failed to extract text from the file. The file might be empty or scanned as an image.');
+                throw new Error('Failed to extract text from the file. The file might be empty, corrupted, or OCR failed on a scanned document.');
             }
         } catch (error: unknown) {
             logger.error('Text extraction failed:', error);
