@@ -173,6 +173,8 @@ export const getTemplateStyles = (templateId: string, isPrint = false, scopeSele
   const select = (suffix = '') => `${rootSelector}${suffix}`
   const contentSelector = scopeSelector ? `${scopeSelector} *` : '*'
   const headingSelector = `${select(' h1')}, ${select(' h2')}, ${select(' h3')}`
+  const mobilePreviewScale = 0.7
+  const mobileSize = (size: number) => Number((size * mobilePreviewScale).toFixed(2))
 
   return `
         ${contentSelector} { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -267,6 +269,37 @@ export const getTemplateStyles = (templateId: string, isPrint = false, scopeSele
             left: 0;
             color: ${template.accentColor};
             font-weight: 700;
+        }
+
+        ${
+          scopeSelector && !isPrint
+            ? `
+        @media (max-width: 768px) {
+            ${rootSelector} {
+                font-size: ${mobileSize(template.bodySize)}pt;
+            }
+
+            ${select(' p')}, ${select(' li')} {
+                font-size: ${mobileSize(template.bodySize)}pt;
+            }
+
+            ${select(' h1')} {
+                font-size: ${mobileSize(template.heading1Size)}pt;
+            }
+
+            ${select(' .resume-meta')} {
+                font-size: ${mobileSize(template.metaSize)}pt;
+            }
+
+            ${select(' h2')} {
+                font-size: ${mobileSize(template.heading2Size)}pt;
+            }
+
+            ${select(' h3')} {
+                font-size: ${mobileSize(template.heading3Size)}pt;
+            }
+        }`
+            : ''
         }
 
         ${

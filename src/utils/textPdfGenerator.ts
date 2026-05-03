@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf'
 import { logger } from '@/utils/logger'
 import { resumeTemplateStyles } from '@/services/resumeStyles'
-const FONT_SCALE = 1.08 // 8% increase (safe range: 1.05–1.12)
+const FONT_SCALE = 1.30 // 15% increase for larger, more readable text
 
 interface PdfSection {
   type: 'heading1' | 'heading2' | 'heading3' | 'paragraph' | 'list' | 'meta'
@@ -67,7 +67,7 @@ const buildTemplateConfigs = (): Record<string, TemplateConfig> => {
 
     configs[key] = {
       heading1Font: style.pdfFontFamily,
-      heading1Size: style.heading1Size,
+      heading1Size: style.heading1Size * FONT_SCALE,
       heading1Color: hexToRgb(style.heading1Color),
       heading1Align: style.heading1Align,
       heading2Font: style.pdfFontFamily,
@@ -98,8 +98,8 @@ const templates: Record<string, TemplateConfig> = buildTemplateConfigs()
 const PT_TO_MM = 0.352778
 const SECTION_SPACING = {
   heading1Bottom: 6,
-  heading2Top: 6,
-  heading2Bottom: 6,
+  heading2Top: 12,
+  heading2Bottom: 2,
   heading3Top: 3,
   heading3Bottom: 1,
   metaBottom: 6,

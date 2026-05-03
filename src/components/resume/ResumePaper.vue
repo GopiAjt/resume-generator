@@ -156,7 +156,7 @@ defineExpose({
     display: flex;
     flex-direction: column;
     background: transparent;
-    padding: 2%;
+    padding: 3%;
     margin: 0;
 }
 </style>
