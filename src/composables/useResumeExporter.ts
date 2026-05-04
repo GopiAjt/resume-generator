@@ -3,6 +3,10 @@ import { getFilename } from '@/utils/resumeUtils'
 import { logger } from '@/utils/logger'
 import { generateTextBasedPdf } from '@/utils/textPdfGenerator'
 
+type NavigatorWithFileShare = Navigator & {
+  canShare?: (data: ShareData) => boolean
+}
+
 export function useResumeExporter() {
   const isIOSWebKit = () => {
     if (typeof navigator === 'undefined') {
@@ -27,6 +31,45 @@ export function useResumeExporter() {
       '<p style="font-family: system-ui, sans-serif;">Preparing your file...</p>',
     )
     return pendingWindow
+  }
+
+  const canUseNativeFileShare = (fileName: string, mimeType: string) => {
+    if (!isIOSWebKit() || typeof File === 'undefined' || typeof navigator.share !== 'function') {
+      return false
+    }
+
+    const file = new File([], fileName, { type: mimeType })
+    const shareData: ShareData = { files: [file], title: fileName }
+    const navigatorWithShare = navigator as NavigatorWithFileShare
+
+    return typeof navigatorWithShare.canShare === 'function'
+      ? navigatorWithShare.canShare(shareData)
+      : true
+  }
+
+  const shareBlobOnIOS = async (blob: Blob, fileName: string) => {
+    if (!isIOSWebKit() || typeof File === 'undefined' || typeof navigator.share !== 'function') {
+      return false
+    }
+
+    const file = new File([blob], fileName, {
+      type: blob.type || 'application/octet-stream',
+    })
+    const shareData: ShareData = {
+      files: [file],
+      title: fileName,
+    }
+    const navigatorWithShare = navigator as NavigatorWithFileShare
+
+    if (
+      typeof navigatorWithShare.canShare === 'function' &&
+      !navigatorWithShare.canShare(shareData)
+    ) {
+      return false
+    }
+
+    await navigator.share(shareData)
+    return true
   }
 
   const triggerBlobDownload = async (
@@ -78,7 +121,9 @@ export function useResumeExporter() {
     if (!generatedResumeMarkdown) return
 
     const fileName = `${getFilename(generatedResumeMarkdown, companyName)}.pdf`
-    const pendingWindow = createPendingDownloadWindow()
+    const pendingWindow = canUseNativeFileShare(fileName, 'application/pdf')
+      ? null
+      : createPendingDownloadWindow()
 
     try {
       onProgress('Generating ATS-friendly text-based PDF...')
@@ -90,6 +135,12 @@ export function useResumeExporter() {
         selectedTemplate,
         onProgress,
       )
+      if (await shareBlobOnIOS(pdfBlob, fileName)) {
+        pendingWindow?.close()
+        onSuccess('PDF ready. Choose Save to Files from the share sheet.')
+        return
+      }
+
       await triggerBlobDownload(pdfBlob, fileName, pendingWindow)
 
       onSuccess(
@@ -114,12 +165,15 @@ export function useResumeExporter() {
   ) => {
     if (!generatedResumeHtml) return
 
-    const pendingWindow = createPendingDownloadWindow()
+    let pendingWindow: Window | null = null
 
     try {
       // Save as .doc with Word XML namespaces — opens in Word without needing Office installed
       const baseName = getFilename(generatedResumeMarkdown, companyName)
       const fileName = `${baseName}.doc`
+      pendingWindow = canUseNativeFileShare(fileName, 'application/msword')
+        ? null
+        : createPendingDownloadWindow()
       const docTitle = companyName ? `Resume — ${companyName}` : 'Resume'
       const content = `
             <html xmlns:o='urn:schemas-microsoft-com:office:office' 
@@ -141,6 +195,12 @@ export function useResumeExporter() {
         `
 
       const blob = new Blob(['\ufeff', content], { type: 'application/msword;charset=utf-8' })
+      if (await shareBlobOnIOS(blob, fileName)) {
+        pendingWindow?.close()
+        onSuccess('DOC ready. Choose Save to Files from the share sheet.')
+        return
+      }
+
       await triggerBlobDownload(blob, fileName, pendingWindow)
 
       onSuccess(
