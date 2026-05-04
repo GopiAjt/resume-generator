@@ -74,9 +74,12 @@ Generate a highly targeted, ATS-friendly resume from the Candidate Resume, tailo
 Source Rules:
 - First infer the target role family and industry from the Job Description. If the Job Description is generic or missing, infer the most suitable role family from the Candidate Resume.
 - Extract required skills, preferred skills, credentials, tools, responsibilities, role seniority, domain terms, and ATS keywords from the Job Description.
+- Cross-check every JD keyword before adding it: include it only when the Candidate Resume supports the same skill, tool, credential, responsibility, domain, or a clearly equivalent concept.
 - Reorder and reframe only experience, projects, skills, education, and achievements supported by the Candidate Resume.
 - Do not invent employers, dates, degrees, licenses, tools, certifications, metrics, responsibilities, clients, revenue, quotas, patient/customer volumes, or regulated experience.
+- Do not create fabricated sections. Include only sections supported by the Candidate Resume; omit empty, generic, or placeholder sections.
 - If a metric is not present, use truthful qualitative impact instead of fabricating a number.
+- If the JD asks for AI tools, automation tools, or domain-specific platforms that are not evidenced in the Candidate Resume, do not add them to the resume; flag the gap honestly in optimization_report using category "Honesty" or "Skills".
 - If the JD is missing, under 50 meaningful characters, or nonsensical, generate a concise generic professional resume based only on the Candidate Resume.
 - Generate the resume in the same language as the Job Description. If the Job Description and resume languages differ, translate the resume to match the Job Description.
 - During translation, preserve proper nouns, candidate names, company names, product names, institution names, certification names, license names, degree names, acronyms, tool names, URLs, email addresses, and standardized keywords unless a widely accepted localized version exists.
@@ -90,6 +93,7 @@ Return original_ats_score and ats_score as keyword-match estimates from 0 to 100
 - Measurable impact and action-oriented bullets: 15 points.
 - ATS-safe structure and parseable formatting: 10 points.
 Score the original Candidate Resume against this rubric first. Then score the generated resume against the same rubric. Do not exceed 95 unless nearly all required JD terms are honestly supported by the Candidate Resume.
+Deduct strongly when Basic Qualifications, minimum requirements, required licenses, required certifications, required years of experience, or mandatory location/work-authorization requirements from the JD are missing or unsupported in the Candidate Resume.
 
 Length Rules:
 - Target 450-650 words total.
@@ -123,6 +127,7 @@ Formatting Rules:
 5. Experience, Projects, and Other Role-Relevant Sections
 - Organization, company, project, institution, or activity name: ### Name
 - Role and dates on next line in bold: **Role | Dates**
+- Use only dates present in the Candidate Resume. If dates are missing, omit dates or use a non-deceptive label such as **Role**; never infer or invent dates.
 - Add a blank line before bullets.
 - For hands-on professional experience, write bullets as direct ownership using verbs appropriate to the field, such as "Managed", "Delivered", "Improved", "Coordinated", "Sold", "Analyzed", "Supported", "Designed", "Implemented", "Taught", "Documented", or "Maintained".
 - For academic, coursework, self-study, volunteering, internships, simulations, or conceptual exposure, label it explicitly in the role/date line or bullet, such as **Academic Project | 2024**, **Volunteer Tutor | 2023**, or "Applied foundational knowledge of...".
@@ -135,6 +140,7 @@ Formatting Rules:
 - Place JD keywords naturally in context.
 - Bold only the most important role keywords, tools, credentials, methods, and metrics.
 - Avoid run-on bullets and keyword stuffing.
+- Do not repeat the same metric across multiple bullets unless the Candidate Resume clearly ties that metric to separate achievements.
 - Bad: "Worked on many different tasks including customer service and reporting and scheduling and helping the team whenever needed."
 - Good: "Improved **customer issue resolution** by coordinating daily follow-ups, updating records, and escalating urgent cases accurately."
 
