@@ -164,6 +164,12 @@ export function useResumeProcessor() {
                     data: new Uint8Array(arrayBuffer),
                     disableFontFace: true,
                     isOffscreenCanvasSupported: false,
+                    // Disable streaming/range-request modes on iOS Safari:
+                    // pdfjs v5 uses ReadableStream async-iteration for these,
+                    // which is unsupported on iOS Safari pre-16.4 and causes
+                    // "undefined is not a function (near '...i of e...')"
+                    disableStream: onIOS,
+                    disableRange: onIOS,
                 }).promise;
                 logger.info(`[Upload][PDF] Document loaded — ${pdf.numPages} page(s)`);
 

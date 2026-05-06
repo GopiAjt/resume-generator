@@ -57,6 +57,9 @@ export const generateResume = async (
     const model = genAI.getGenerativeModel({
       model: 'gemini-flash-latest',
       generationConfig: {
+        temperature: 0.3,
+        topP: 0.95,
+        topK: 40,
         responseMimeType: 'application/json',
       },
     })
