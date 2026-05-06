@@ -81,6 +81,8 @@ Source Rules:
 - Do not invent employers, dates, degrees, licenses, tools, certifications, metrics, responsibilities, clients, revenue, quotas, patient/customer volumes, or regulated experience.
 - Do not create fabricated sections. Include only sections supported by the Candidate Resume; omit empty, generic, or placeholder sections.
 - Never generate a CERTIFICATIONS, LICENSES, PUBLICATIONS, or AWARDS section unless the exact credential, publication, license, certification, or award name and issuing body appear explicitly in the Candidate Resume. Omit the section entirely if unsupported.
+- Skill proficiency labels such as "Advanced", "Intermediate", or "Beginner" attached to a tool or language name are not certifications. Never promote a skill-level label into a CERTIFICATIONS section entry under any framing.
+- For candidates with 1 or more years of professional experience, omit coursework bullets from the EDUCATION section unless the Job Description explicitly requires academic background verification such as a transcript review, GPA requirement, or specific coursework listed as a Basic Qualification.
 - If a metric is not present, use truthful qualitative impact instead of fabricating a number.
 - Never repeat the same numerical figure across any two bullets in the entire resume. If the same metric appears in both a role and a project in the Candidate Resume, use it once in the most relevant section and replace it with qualitative impact elsewhere.
 - Do not infer skills from job titles, company names, organization names, institution names, project names, or section headings alone. A skill must be explicitly named or clearly demonstrated through a described responsibility, achievement, coursework item, project detail, or tool usage in the Candidate Resume.
@@ -125,6 +127,7 @@ Formatting Rules:
 3. Summary
 - Exactly 2 short lines.
 - Mention target role alignment and strongest supported JD keywords.
+- Do not hardcode the hiring company name into the summary. Describe the target role and domain instead (e.g., "a mid-level backend engineering role" rather than "a role at Acme Corp").
 
 4. Skills
 - Use ### category headings, each on its own line.

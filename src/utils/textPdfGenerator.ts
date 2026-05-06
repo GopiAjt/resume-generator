@@ -1,7 +1,7 @@
 import { jsPDF } from 'jspdf'
 import { logger } from '@/utils/logger'
 import { resumeTemplateStyles } from '@/services/resumeStyles'
-const FONT_SCALE = 1.30 // 15% increase for larger, more readable text
+const FONT_SCALE = 1.3 // 15% increase for larger, more readable text
 
 interface PdfSection {
   type: 'heading1' | 'heading2' | 'heading3' | 'paragraph' | 'list' | 'meta'
@@ -97,7 +97,8 @@ const templates: Record<string, TemplateConfig> = buildTemplateConfigs()
 
 const PT_TO_MM = 0.352778
 const SECTION_SPACING = {
-  heading1Bottom: 6,
+  heading1Top: 6,
+  heading1Bottom: 1,
   heading2Top: 12,
   heading2Bottom: 2,
   heading3Top: 3,
@@ -205,7 +206,7 @@ export function generateTextBasedPdf(
               h1Align,
               checkPageBreak,
             )
-            currentY += ptToMm(SECTION_SPACING.heading1Bottom)
+            currentY += ptToMm(SECTION_SPACING.heading1Bottom) - h1LineHeight * 0.2
             break
 
           case 'heading2':
@@ -512,6 +513,10 @@ function getSpacingBeforeSection(
   current: PdfSection['type'],
   previous: PdfSection['type'] | null,
 ): number {
+  if (current === 'heading1') {
+    return ptToMm(SECTION_SPACING.heading1Top) * 2.5
+  }
+
   if (!previous) {
     return 0
   }

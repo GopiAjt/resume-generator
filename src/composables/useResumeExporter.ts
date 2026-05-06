@@ -21,12 +21,25 @@ export function useResumeExporter() {
     return isIOS && /AppleWebKit/i.test(ua)
   }
 
+  // Convert a Blob to a base64 data: URL — always navigable in iOS Safari
+  const blobToDataUrl = (blob: Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = () => reject(reader.error || new Error('FileReader error'))
+      reader.readAsDataURL(blob)
+    })
+
   const createPendingDownloadWindow = () => {
     if (!isIOSWebKit()) {
       return null
     }
 
+    logger.info('[iOS] Opening pending download window before blob is ready')
     const pendingWindow = window.open('', '_blank')
+    if (!pendingWindow) {
+      logger.warn('[iOS] window.open blocked — popup guard may be active')
+    }
     pendingWindow?.document.write(
       '<p style="font-family: system-ui, sans-serif;">Preparing your file...</p>',
     )
@@ -42,9 +55,12 @@ export function useResumeExporter() {
     const shareData: ShareData = { files: [file], title: fileName }
     const navigatorWithShare = navigator as NavigatorWithFileShare
 
-    return typeof navigatorWithShare.canShare === 'function'
-      ? navigatorWithShare.canShare(shareData)
-      : true
+    const supported =
+      typeof navigatorWithShare.canShare === 'function'
+        ? navigatorWithShare.canShare(shareData)
+        : true
+    logger.info(`[iOS] canUseNativeFileShare("${fileName}") → ${supported}`)
+    return supported
   }
 
   const shareBlobOnIOS = async (blob: Blob, fileName: string) => {
@@ -65,10 +81,13 @@ export function useResumeExporter() {
       typeof navigatorWithShare.canShare === 'function' &&
       !navigatorWithShare.canShare(shareData)
     ) {
+      logger.warn(`[iOS] navigator.canShare() returned false for "${fileName}" — skipping share sheet`)
       return false
     }
 
+    logger.info(`[iOS] Invoking navigator.share() for "${fileName}"`)
     await navigator.share(shareData)
+    logger.info(`[iOS] navigator.share() resolved for "${fileName}"`)
     return true
   }
 
@@ -81,17 +100,35 @@ export function useResumeExporter() {
 
     try {
       if (isIOSWebKit()) {
-        const targetWindow =
-          pendingWindow && !pendingWindow.closed ? pendingWindow : window.open('', '_blank')
+        const hadPendingWindow = pendingWindow !== null && !pendingWindow.closed
+        const targetWindow = hadPendingWindow
+          ? pendingWindow
+          : window.open('', '_blank')
+
+        logger.info(`[iOS] triggerBlobDownload — hadPendingWindow: ${hadPendingWindow} | targetWindow opened: ${!!targetWindow}`)
 
         if (targetWindow) {
-          targetWindow.location.href = objectUrl
+          // Try blob: URL first (faster, no base64 overhead)
+          try {
+            targetWindow.location.href = objectUrl
+            logger.info('[iOS] Navigated target window to blob: URL')
+          } catch (blobNavErr) {
+            // blob: navigation failed (e.g. cross-origin restriction) — fall back to data: URL
+            logger.warn('[iOS] blob: URL navigation failed — falling back to data: URL', blobNavErr)
+            const dataUrl = await blobToDataUrl(blob)
+            targetWindow.location.href = dataUrl
+            logger.info('[iOS] Navigated target window to data: URL (fallback)')
+          }
         } else {
-          window.location.href = objectUrl
+          // No window available — fall back to data: URL on current page
+          logger.warn('[iOS] Could not open target window — navigating current page to data: URL')
+          const dataUrl = await blobToDataUrl(blob)
+          window.location.href = dataUrl
         }
         return
       }
 
+      // Desktop: standard anchor download
       const link = document.createElement('a')
       link.style.display = 'none'
       link.href = objectUrl
@@ -120,10 +157,13 @@ export function useResumeExporter() {
   ) => {
     if (!generatedResumeMarkdown) return
 
+    const onIOS = isIOSWebKit()
     const fileName = `${getFilename(generatedResumeMarkdown, companyName)}.pdf`
-    const pendingWindow = canUseNativeFileShare(fileName, 'application/pdf')
-      ? null
-      : createPendingDownloadWindow()
+    logger.info(`[Download][PDF] Starting — fileName: "${fileName}" | iOS: ${onIOS}`)
+
+    const useShare = canUseNativeFileShare(fileName, 'application/pdf')
+    const pendingWindow = useShare ? null : createPendingDownloadWindow()
+    logger.info(`[Download][PDF] useShare: ${useShare} | pendingWindow opened: ${!!pendingWindow}`)
 
     try {
       onProgress('Generating ATS-friendly text-based PDF...')
@@ -135,22 +175,26 @@ export function useResumeExporter() {
         selectedTemplate,
         onProgress,
       )
+      logger.info(`[Download][PDF] Blob generated — size: ${(pdfBlob.size / 1024).toFixed(1)} KB | type: "${pdfBlob.type}"`)
+
       if (await shareBlobOnIOS(pdfBlob, fileName)) {
         pendingWindow?.close()
         onSuccess('PDF ready. Choose Save to Files from the share sheet.')
         return
       }
 
+      logger.info('[Download][PDF] Proceeding with triggerBlobDownload…')
       await triggerBlobDownload(pdfBlob, fileName, pendingWindow)
 
       onSuccess(
-        isIOSWebKit()
-          ? 'PDF opened. Use Share to save it to Files.'
+        onIOS
+          ? 'PDF opened. Use Share → Save to Files to keep it.'
           : 'ATS-friendly PDF with selectable text downloaded!',
       )
+      logger.info('[Download][PDF] Download flow complete')
     } catch (error) {
       pendingWindow?.close()
-      logger.error('PDF generation failed:', error)
+      logger.error('[Download][PDF] Failed:', error)
       onError('Failed to generate PDF. Click "Copy Markdown" if needed.')
     }
   }
@@ -165,15 +209,19 @@ export function useResumeExporter() {
   ) => {
     if (!generatedResumeHtml) return
 
+    const onIOS = isIOSWebKit()
     let pendingWindow: Window | null = null
 
     try {
       // Save as .doc with Word XML namespaces — opens in Word without needing Office installed
       const baseName = getFilename(generatedResumeMarkdown, companyName)
       const fileName = `${baseName}.doc`
-      pendingWindow = canUseNativeFileShare(fileName, 'application/msword')
-        ? null
-        : createPendingDownloadWindow()
+      logger.info(`[Download][DOC] Starting — fileName: "${fileName}" | iOS: ${onIOS}`)
+
+      const useShare = canUseNativeFileShare(fileName, 'application/msword')
+      pendingWindow = useShare ? null : createPendingDownloadWindow()
+      logger.info(`[Download][DOC] useShare: ${useShare} | pendingWindow opened: ${!!pendingWindow}`)
+
       const docTitle = companyName ? `Resume — ${companyName}` : 'Resume'
       const content = `
             <html xmlns:o='urn:schemas-microsoft-com:office:office' 
@@ -195,22 +243,26 @@ export function useResumeExporter() {
         `
 
       const blob = new Blob(['\ufeff', content], { type: 'application/msword;charset=utf-8' })
+      logger.info(`[Download][DOC] Blob created — size: ${(blob.size / 1024).toFixed(1)} KB`)
+
       if (await shareBlobOnIOS(blob, fileName)) {
         pendingWindow?.close()
         onSuccess('DOC ready. Choose Save to Files from the share sheet.')
         return
       }
 
+      logger.info('[Download][DOC] Proceeding with triggerBlobDownload…')
       await triggerBlobDownload(blob, fileName, pendingWindow)
 
       onSuccess(
-        isIOSWebKit()
-          ? 'DOC opened. Use Share to save it to Files.'
+        onIOS
+          ? 'DOC opened. Use Share → Save to Files to keep it.'
           : 'DOC downloaded successfully!',
       )
+      logger.info('[Download][DOC] Download flow complete')
     } catch (error) {
       pendingWindow?.close()
-      logger.error('DOC generation failed:', error)
+      logger.error('[Download][DOC] Failed:', error)
       onError('Failed to generate DOC. Click "Copy Markdown" if needed.')
     }
   }

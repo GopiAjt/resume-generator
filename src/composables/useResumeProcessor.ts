@@ -52,6 +52,13 @@ const isLikelyMobileBrowser = () => {
     return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 };
 
+const isLikelyIOS = () => {
+    if (typeof navigator === 'undefined') return false;
+    const ua = navigator.userAgent || '';
+    return /iPad|iPhone|iPod/.test(ua) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+};
+
 const getOcrViewport = (page: PDFPageProxy) => {
     const baseScale = isLikelyMobileBrowser() ? MOBILE_OCR_SCALE : DESKTOP_OCR_SCALE;
     const viewport = page.getViewport({ scale: baseScale });
@@ -138,34 +145,52 @@ export function useResumeProcessor() {
         errorMessage.value = '';
         extractedResumeText.value = '';
 
+        const onIOS = isLikelyIOS();
+        const onMobile = isLikelyMobileBrowser();
+
         try {
             const fileType = file.type;
             const fileName = file.name.toLowerCase();
 
+            logger.info(`[Upload] File selected — name: "${file.name}" | size: ${(file.size / 1024).toFixed(1)} KB | type: "${file.type || 'unknown'}" | iOS: ${onIOS} | mobile: ${onMobile}`);
+
             if (fileType === 'application/pdf' || fileName.endsWith('.pdf')) {
+                logger.info('[Upload][PDF] Starting ArrayBuffer read…');
                 const arrayBuffer = await readFileAsArrayBuffer(file);
+                logger.info(`[Upload][PDF] ArrayBuffer read complete — ${arrayBuffer.byteLength} bytes`);
+
+                logger.info('[Upload][PDF] Passing buffer to pdfjs.getDocument…');
                 const pdf = await pdfjsLib.getDocument({
                     data: new Uint8Array(arrayBuffer),
                     disableFontFace: true,
                     isOffscreenCanvasSupported: false,
                 }).promise;
+                logger.info(`[Upload][PDF] Document loaded — ${pdf.numPages} page(s)`);
+
                 let text = '';
 
                 for (let i = 1; i <= pdf.numPages; i++) {
+                    logger.info(`[Upload][PDF] Extracting page ${i} of ${pdf.numPages}…`);
                     const page = await pdf.getPage(i);
-                    text += `${await extractTextFromPdfPage(page, i)}\n`;
+                    const pageText = await extractTextFromPdfPage(page, i);
+                    const charCount = pageText.replace(/\s+/g, '').length;
+                    logger.info(`[Upload][PDF] Page ${i} done — ${charCount} non-whitespace chars extracted`);
+                    text += `${pageText}\n`;
                 }
-                
+
                 extractedResumeText.value = text;
-                logger.info('Extracted PDF Text:', text);
+                logger.info(`[Upload][PDF] Extraction complete — total ${text.length} chars | preview: "${text.slice(0, 120).replace(/\n/g, ' ')}…"`);
             } else if (
                 fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
                 fileName.endsWith('.docx')
             ) {
+                logger.info('[Upload][DOCX] Starting ArrayBuffer read…');
                 const arrayBuffer = await readFileAsArrayBuffer(file);
+                logger.info(`[Upload][DOCX] ArrayBuffer read complete — ${arrayBuffer.byteLength} bytes`);
+
                 const result = await mammoth.extractRawText({ arrayBuffer });
                 extractedResumeText.value = result.value;
-                logger.info('Extracted DOCX Text:', result.value);
+                logger.info(`[Upload][DOCX] Extraction complete — ${result.value.length} chars | iOS: ${onIOS}`);
             } else {
                 throw new Error('Unsupported file format. Please upload a PDF or DOCX file.');
             }
@@ -174,7 +199,7 @@ export function useResumeProcessor() {
                 throw new Error('Failed to extract text from the file. The file might be empty, corrupted, or OCR failed on a scanned document.');
             }
         } catch (error: unknown) {
-            logger.error('Text extraction failed:', error);
+            logger.error(`[Upload] Text extraction failed (iOS: ${onIOS}):`, error);
             errorMessage.value = error instanceof Error ? error.message : 'Failed to read the resume file.';
             throw error;
         } finally {
