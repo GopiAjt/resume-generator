@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { getTemplateStyles } from '@/services/resumeStyles';
 
 const props = defineProps<{
@@ -8,8 +8,79 @@ const props = defineProps<{
 }>();
 
 const resumeContainer = ref<HTMLElement | null>(null);
+const resumeContentHost = ref<HTMLElement | null>(null);
 const previewTemplateStyles = computed(() =>
-    getTemplateStyles(props.selectedTemplate, false, `.resume-paper.template-${props.selectedTemplate}`)
+    getTemplateStyles(props.selectedTemplate, false, '.resume-content-body')
+);
+let protectedResumeRoot: ShadowRoot | null = null;
+
+const blockedPreviewEvents = ['copy', 'cut', 'contextmenu', 'dragstart', 'selectstart'];
+
+const blockPreviewExtraction = (event: Event) => {
+    event.preventDefault();
+    event.stopPropagation();
+};
+
+const getProtectedPreviewMarkup = () => `
+    <style>
+        :host {
+            display: block;
+            background: transparent;
+            padding: 3%;
+            margin: 0;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        *, *::before, *::after {
+            -webkit-user-select: none !important;
+            user-select: none !important;
+        }
+
+        ::selection {
+            background: transparent;
+            color: inherit;
+        }
+
+        .resume-content-body {
+            display: flex;
+            flex-direction: column;
+            background: transparent;
+            padding: 0;
+            margin: 0;
+        }
+
+        ${previewTemplateStyles.value}
+    </style>
+    <div class="resume-content-body" aria-label="Resume preview">
+        ${props.generatedResumeHtml}
+    </div>
+`;
+
+const updateProtectedPreview = () => {
+    if (!protectedResumeRoot) return;
+    protectedResumeRoot.innerHTML = getProtectedPreviewMarkup();
+};
+
+onMounted(() => {
+    if (!resumeContentHost.value) return;
+
+    protectedResumeRoot = resumeContentHost.value.attachShadow({ mode: 'closed' });
+    blockedPreviewEvents.forEach((eventName) => {
+        resumeContentHost.value?.addEventListener(eventName, blockPreviewExtraction, true);
+    });
+    updateProtectedPreview();
+});
+
+onBeforeUnmount(() => {
+    blockedPreviewEvents.forEach((eventName) => {
+        resumeContentHost.value?.removeEventListener(eventName, blockPreviewExtraction, true);
+    });
+});
+
+watch(
+    () => [props.generatedResumeHtml, previewTemplateStyles.value],
+    updateProtectedPreview,
 );
 
 // Expose the container ref so the parent (CreateResumeView) can pass it to useResumeExporter
@@ -20,8 +91,12 @@ defineExpose({
 
 <template>
     <div class="resume-paper" :class="'template-' + selectedTemplate" ref="resumeContainer">
-        <component :is="'style'">{{ previewTemplateStyles }}</component>
-        <div class="resume-content" v-html="generatedResumeHtml"></div>
+        <div
+            ref="resumeContentHost"
+            class="resume-content-shell"
+            aria-label="Protected resume preview"
+            tabindex="-1"
+        ></div>
     </div>
 </template>
 
@@ -152,11 +227,14 @@ defineExpose({
     display: none !important;
 }
 
-.resume-content {
+.resume-content-shell {
     display: flex;
     flex-direction: column;
     background: transparent;
     padding: 3%;
     margin: 0;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 </style>
