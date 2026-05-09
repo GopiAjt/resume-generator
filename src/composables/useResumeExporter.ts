@@ -85,10 +85,19 @@ export function useResumeExporter() {
       return false
     }
 
-    logger.info(`[iOS] Invoking navigator.share() for "${fileName}"`)
-    await navigator.share(shareData)
-    logger.info(`[iOS] navigator.share() resolved for "${fileName}"`)
-    return true
+    try {
+      logger.info(`[iOS] Invoking navigator.share() for "${fileName}"`)
+      await navigator.share(shareData)
+      logger.info(`[iOS] navigator.share() resolved for "${fileName}"`)
+      return true
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.info(`[iOS] share cancelled by user for "${fileName}"`)
+        throw new Error('UserCancelledError')
+      }
+      logger.warn(`[iOS] navigator.share() failed:`, error)
+      return false
+    }
   }
 
   const triggerBlobDownload = async (
@@ -194,6 +203,10 @@ export function useResumeExporter() {
       logger.info('[Download][PDF] Download flow complete')
     } catch (error) {
       pendingWindow?.close()
+      if (error instanceof Error && error.message === 'UserCancelledError') {
+        logger.info('[Download][PDF] User cancelled the share dialog.')
+        return
+      }
       logger.error('[Download][PDF] Failed:', error)
       onError('Failed to generate PDF. Click "Copy Markdown" if needed.')
     }
@@ -262,6 +275,10 @@ export function useResumeExporter() {
       logger.info('[Download][DOC] Download flow complete')
     } catch (error) {
       pendingWindow?.close()
+      if (error instanceof Error && error.message === 'UserCancelledError') {
+        logger.info('[Download][DOC] User cancelled the share dialog.')
+        return
+      }
       logger.error('[Download][DOC] Failed:', error)
       onError('Failed to generate DOC. Click "Copy Markdown" if needed.')
     }

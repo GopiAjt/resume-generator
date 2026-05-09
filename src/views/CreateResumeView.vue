@@ -17,6 +17,7 @@ import type { OptimizationItem } from '@/services/gemini'
 import { useResumeProcessor } from '@/composables/useResumeProcessor'
 import { useResumeExporter } from '@/composables/useResumeExporter'
 import { useToast } from '@/composables/useToast'
+import { trackEvent } from '@/utils/analytics'
 import { TEST_COMPANY_NAME, TEST_JOB_DESCRIPTION, TEST_RESUME_MARKDOWN } from '@/utils/testResume'
 
 // Constants
@@ -81,6 +82,7 @@ onUnmounted(stopLoadingCycle)
 
 const handleFormSubmit = (text: string) => {
   if (text.length > MAX_RESUME_LENGTH) {
+    trackEvent('manual_entry_failed', { reason: 'resume_text_too_long' })
     showToast(
       `Your resume text is too long! Please limit it to ${MAX_RESUME_LENGTH} characters.`,
       'error',
@@ -90,16 +92,29 @@ const handleFormSubmit = (text: string) => {
   extractedResumeText.value = text
   resumeFile.value = null
   showModal.value = false
+  trackEvent('manual_entry_submitted', { resume_length: text.length })
   showToast('Your details have been processed. Now enter the Job Description!', 'success')
+}
+
+const openManualEntry = () => {
+  trackEvent('manual_entry_opened')
+  showModal.value = true
 }
 
 const handleFileChange = async (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files[0]) {
     const file = target.files[0]
+    const fileType = file.name.split('.').pop()?.toLowerCase() || 'unknown'
+
+    trackEvent('resume_upload_started', {
+      file_type: fileType,
+      file_size_kb: Math.round(file.size / 1024),
+    })
 
     // 5MB File Size Validation
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      trackEvent('resume_upload_failed', { reason: 'file_too_large', file_type: fileType })
       showToast(`File is too large! Maximum size is ${MAX_FILE_SIZE_MB}MB.`, 'error')
       target.value = '' // Clear input
       return
@@ -111,16 +126,26 @@ const handleFileChange = async (event: Event) => {
 
       // Check extracted text length
       if (extractedResumeText.value.length > MAX_RESUME_LENGTH) {
+        trackEvent('resume_upload_failed', {
+          reason: 'extracted_text_too_long',
+          file_type: fileType,
+        })
         showToast(`Extracted resume text is too long! Please use a more concise resume.`, 'error')
         extractedResumeText.value = ''
         resumeFile.value = null
         target.value = ''
+      } else {
+        trackEvent('resume_upload_success', {
+          file_type: fileType,
+          resume_length: extractedResumeText.value.length,
+        })
       }
     } catch (err: unknown) {
       const msg =
         err instanceof Error
           ? err.message
           : extractionError.value || 'Failed to read the resume file.'
+      trackEvent('resume_upload_failed', { reason: 'extraction_error', file_type: fileType })
       showToast(msg, 'error')
       resumeFile.value = null
       target.value = ''
@@ -130,10 +155,12 @@ const handleFileChange = async (event: Event) => {
 
 const validateInputs = () => {
   if (!jobDescription.value.trim()) {
+    trackEvent('resume_validation_failed', { reason: 'missing_job_description' })
     showToast('Please enter a target job description.', 'error')
     return false
   }
   if (jobDescription.value.length > MAX_JD_LENGTH) {
+    trackEvent('resume_validation_failed', { reason: 'job_description_too_long' })
     showToast(
       `Job description is too long! Please limit it to ${MAX_JD_LENGTH} characters.`,
       'error',
@@ -141,6 +168,7 @@ const validateInputs = () => {
     return false
   }
   if (!extractedResumeText.value.trim()) {
+    trackEvent('resume_validation_failed', { reason: 'missing_resume' })
     showToast('Please upload your resume or enter your details manually.', 'error')
     return false
   }
@@ -148,6 +176,12 @@ const validateInputs = () => {
 }
 
 const handleSubmit = async () => {
+  trackEvent('optimize_resume_clicked', {
+    has_company_name: Boolean(companyName.value.trim()),
+    resume_length: extractedResumeText.value.length,
+    job_description_length: jobDescription.value.length,
+  })
+
   if (!validateInputs()) return
 
   isGenerating.value = true
@@ -158,6 +192,7 @@ const handleSubmit = async () => {
   atsScore.value = 0
   optimizationReport.value = []
   startLoadingCycle()
+  trackEvent('resume_generation_started')
 
   try {
     const response = await generateResume(jobDescription.value, extractedResumeText.value)
@@ -172,9 +207,17 @@ const handleSubmit = async () => {
       atsScore.value = response.ats_score
       optimizationReport.value = response.optimization_report
     }
+    trackEvent('resume_generation_success', {
+      original_ats_score: originalAtsScore.value,
+      ats_score: atsScore.value,
+      optimization_items: optimizationReport.value.length,
+    })
   } catch (error: unknown) {
     logger.error('Failed to generate resume:', error)
     const msg = error instanceof Error ? error.message : ''
+    trackEvent('resume_generation_failed', {
+      reason: msg.includes('503') || msg.toLowerCase().includes('high demand') ? 'high_demand' : 'error',
+    })
     if (msg.includes('503') || msg.toLowerCase().includes('high demand')) {
       showToast(
         'Gemini is currently under high demand. Please wait a few moments and try again!',
@@ -191,6 +234,7 @@ const handleSubmit = async () => {
 }
 
 const loadTestResume = async () => {
+  trackEvent('test_resume_loaded')
   errorMessage.value = ''
   companyName.value = TEST_COMPANY_NAME
   jobDescription.value = TEST_JOB_DESCRIPTION
@@ -205,6 +249,7 @@ const loadTestResume = async () => {
 }
 
 const onDownloadPDF = () => {
+  trackEvent('pdf_download_clicked', { template: selectedTemplate.value })
   const container = resumePaperRef.value?.resumeContainer ?? null
   downloadPDF(
     container,
@@ -218,6 +263,7 @@ const onDownloadPDF = () => {
 }
 
 const onDownloadDOC = () => {
+  trackEvent('doc_download_clicked', { template: selectedTemplate.value })
   downloadDOC(
     generatedResumeHtml.value,
     generatedResume.value,
@@ -229,12 +275,23 @@ const onDownloadDOC = () => {
 }
 
 const onCopyMarkdown = () => {
+  trackEvent('copy_markdown_clicked')
   copyToClipboard(
     generatedResumeHtml.value,
     generatedResume.value,
     (msg) => showToast(msg, 'success'),
     (msg) => showToast(msg, 'error'),
   )
+}
+
+const onTemplateSelected = (templateId: string) => {
+  selectedTemplate.value = templateId
+  trackEvent('template_selected', { template: templateId })
+}
+
+const onStartOver = () => {
+  trackEvent('start_over_clicked')
+  generatedResume.value = ''
 }
 </script>
 
@@ -281,7 +338,7 @@ const onCopyMarkdown = () => {
         :resumeFile="resumeFile"
         :extractedResumeText="extractedResumeText"
         @file-change="handleFileChange"
-        @manual-entry="showModal = true"
+        @manual-entry="openManualEntry"
       />
 
       <JobDescription v-model="jobDescription" :disabled="isGenerating" />
@@ -322,11 +379,11 @@ const onCopyMarkdown = () => {
           @download-pdf="onDownloadPDF"
           @download-doc="onDownloadDOC"
           @copy-markdown="onCopyMarkdown"
-          @start-over="generatedResume = ''"
+          @start-over="onStartOver"
         />
       </div>
 
-      <TemplateSelector v-model="selectedTemplate" />
+      <TemplateSelector :modelValue="selectedTemplate" @update:modelValue="onTemplateSelected" />
 
       <ResumePaper
         ref="resumePaperRef"
