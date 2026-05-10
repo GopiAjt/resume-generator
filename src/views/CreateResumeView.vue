@@ -18,7 +18,7 @@ import { useResumeProcessor } from '@/composables/useResumeProcessor'
 import { useResumeExporter } from '@/composables/useResumeExporter'
 import { useToast } from '@/composables/useToast'
 import { trackEvent } from '@/utils/analytics'
-import { TEST_COMPANY_NAME, TEST_JOB_DESCRIPTION, TEST_RESUME_MARKDOWN } from '@/utils/testResume'
+// import { TEST_COMPANY_NAME, TEST_JOB_DESCRIPTION, TEST_RESUME_MARKDOWN } from '@/utils/testResume'
 
 // Constants
 const MAX_FILE_SIZE_MB = 5
@@ -233,20 +233,20 @@ const handleSubmit = async () => {
   }
 }
 
-const loadTestResume = async () => {
-  trackEvent('test_resume_loaded')
-  errorMessage.value = ''
-  companyName.value = TEST_COMPANY_NAME
-  jobDescription.value = TEST_JOB_DESCRIPTION
-  extractedResumeText.value = TEST_RESUME_MARKDOWN
-  generatedResume.value = TEST_RESUME_MARKDOWN
-  generatedResumeHtml.value = await formatResumeHtml(TEST_RESUME_MARKDOWN)
-  originalAtsScore.value = 0
-  atsScore.value = 0
-  optimizationReport.value = []
-  resumeFile.value = null
-  showToast('Loaded test resume for quick preview.', 'success')
-}
+// const loadTestResume = async () => {
+//   trackEvent('test_resume_loaded')
+//   errorMessage.value = ''
+//   companyName.value = TEST_COMPANY_NAME
+//   jobDescription.value = TEST_JOB_DESCRIPTION
+//   extractedResumeText.value = TEST_RESUME_MARKDOWN
+//   generatedResume.value = TEST_RESUME_MARKDOWN
+//   generatedResumeHtml.value = await formatResumeHtml(TEST_RESUME_MARKDOWN)
+//   originalAtsScore.value = 0
+//   atsScore.value = 0
+//   optimizationReport.value = []
+//   resumeFile.value = null
+//   showToast('Loaded test resume for quick preview.', 'success')
+// }
 
 const onDownloadPDF = () => {
   trackEvent('pdf_download_clicked', { template: selectedTemplate.value })
@@ -300,18 +300,10 @@ const onStartOver = () => {
     <!-- Toast Notification (Teleported to body to fix position: fixed inside transformed parents) -->
     <Teleport to="body">
       <Transition name="toast">
-        <div
-          v-if="toast.show"
-          class="toast-notification"
-          :class="toast.type"
-          role="alert"
-          aria-live="polite"
-        >
+        <div v-if="toast.show" class="toast-notification" :class="toast.type" role="alert" aria-live="polite">
           <div class="toast-content">
             <span v-if="toast.type === 'warning'" class="toast-icon" aria-hidden="true">⚠️</span>
-            <span v-else-if="toast.type === 'success'" class="toast-icon" aria-hidden="true"
-              >✅</span
-            >
+            <span v-else-if="toast.type === 'success'" class="toast-icon" aria-hidden="true">✅</span>
             <span v-else class="toast-icon" aria-hidden="true">❌</span>
             <p>{{ toast.message }}</p>
           </div>
@@ -331,15 +323,9 @@ const onStartOver = () => {
     </div>
 
     <div class="input-section" v-if="!generatedResume">
-      <ResumeUpload
-        v-model:companyName="companyName"
-        :isExtracting="isExtracting"
-        :isGenerating="isGenerating"
-        :resumeFile="resumeFile"
-        :extractedResumeText="extractedResumeText"
-        @file-change="handleFileChange"
-        @manual-entry="openManualEntry"
-      />
+      <ResumeUpload v-model:companyName="companyName" :isExtracting="isExtracting" :isGenerating="isGenerating"
+        :resumeFile="resumeFile" :extractedResumeText="extractedResumeText" @file-change="handleFileChange"
+        @manual-entry="openManualEntry" />
 
       <JobDescription v-model="jobDescription" :disabled="isGenerating" />
 
@@ -348,55 +334,34 @@ const onStartOver = () => {
       </div>
 
       <div class="actions">
-        <button
-          @click="handleSubmit"
-          class="btn btn-primary"
-          :disabled="
-            !jobDescription.trim() || !extractedResumeText.trim() || isGenerating || isExtracting
-          "
-        >
+        <button @click="handleSubmit" class="btn btn-primary" :disabled="!jobDescription.trim() || !extractedResumeText.trim() || isGenerating || isExtracting
+          ">
           <span v-if="isGenerating" class="loading-step-text">
             <span class="btn-spinner"></span>
             {{ loadingStep }}
           </span>
           <span v-else>Optimize Resume</span>
         </button>
-        <button
-          @click="loadTestResume"
-          class="btn btn-secondary"
-          :disabled="isGenerating || isExtracting"
-        >
+        <!-- <button @click="loadTestResume" class="btn btn-secondary" :disabled="isGenerating || isExtracting">
           Load Test Resume
-        </button>
+        </button> -->
       </div>
     </div>
 
     <div class="resume-preview" v-if="generatedResume">
       <div class="preview-header">
         <h2>Tailored Resume Preview</h2>
-        <ResumeActions
-          :isGenerating="isGenerating"
-          @download-pdf="onDownloadPDF"
-          @download-doc="onDownloadDOC"
-          @copy-markdown="onCopyMarkdown"
-          @start-over="onStartOver"
-        />
+        <ResumeActions :isGenerating="isGenerating" @download-pdf="onDownloadPDF" @download-doc="onDownloadDOC"
+          @copy-markdown="onCopyMarkdown" @start-over="onStartOver" />
       </div>
 
       <TemplateSelector :modelValue="selectedTemplate" @update:modelValue="onTemplateSelected" />
 
-      <ResumePaper
-        ref="resumePaperRef"
-        :selectedTemplate="selectedTemplate"
-        :generatedResumeHtml="generatedResumeHtml"
-      />
+      <ResumePaper ref="resumePaperRef" :selectedTemplate="selectedTemplate"
+        :generatedResumeHtml="generatedResumeHtml" />
 
-      <OptimizationReport
-        v-if="optimizationReport.length"
-        :optimizationReport="optimizationReport"
-        :originalAtsScore="originalAtsScore"
-        :atsScore="atsScore"
-      />
+      <OptimizationReport v-if="optimizationReport.length" :optimizationReport="optimizationReport"
+        :originalAtsScore="originalAtsScore" :atsScore="atsScore" />
     </div>
 
     <ResumeDetailFormModal v-if="showModal" @close="showModal = false" @submit="handleFormSubmit" />

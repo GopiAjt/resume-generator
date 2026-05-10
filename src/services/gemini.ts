@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { logger } from '@/utils/logger'
+import { sanitizeResumeMarkdown } from '@/utils/resumeUtils'
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
 
@@ -119,6 +120,8 @@ Formatting Rules:
 1. Header
 - First line: # Candidate Name
 - Second line: Location | Email | Phone | [LinkedIn](URL) | [GitHub](URL)
+- Include only contact items that are explicitly present and non-empty in the Candidate Resume.
+- Do not write empty social placeholders such as [LinkedIn](), [GitHub](), LinkedIn, GitHub, N/A, or blank contact fields.
 - Keep contact details left-aligned. Use pipe separators. No icons or emojis.
 
 2. Sections
@@ -128,7 +131,9 @@ Formatting Rules:
 - Use exactly one blank line before and after each section heading.
 
 3. Summary
-- Exactly 2 short lines.
+- Exactly 2 short lines, with 8-14 words per line.
+- Maximum 28 words total.
+- No more than 2 sentences total.
 - Mention target role alignment and strongest supported JD keywords.
 - Do not hardcode the hiring company name into the summary. Describe the target role and domain instead (e.g., "a mid-level backend engineering role" rather than "a role at Acme Corp").
 
@@ -242,7 +247,11 @@ ${serializePromptInput('candidate_resume', userResume)}
       const jsonCandidate = extractBalancedJson(cleanedText) || cleanedText
 
       try {
-        return JSON.parse(jsonCandidate) as ResumeGenerationResult
+        const parsed = JSON.parse(jsonCandidate) as ResumeGenerationResult
+        return {
+          ...parsed,
+          resume_markdown: sanitizeResumeMarkdown(parsed.resume_markdown),
+        }
       } catch (initialParseError) {
         logger.warn(
           'JSON.parse failed on candidate, falling back to manual extraction',
@@ -254,7 +263,7 @@ ${serializePromptInput('candidate_resume', userResume)}
       logger.error('Failed to parse JSON response. Raw text:', text)
       // Fallback for non-JSON responses or malformed output
       return {
-        resume_markdown: text,
+        resume_markdown: sanitizeResumeMarkdown(text),
         original_ats_score: 0,
         ats_score: 0,
         optimization_report: [

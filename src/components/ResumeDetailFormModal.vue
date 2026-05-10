@@ -61,10 +61,12 @@ const handleSubmit = () => {
         return
     }
     // Format the form as a Reference Resume text
+    const contactItems = [form.location, form.email, form.phone]
+    if (form.linkedin.trim()) contactItems.push(`LinkedIn: ${form.linkedin.trim()}`)
+    if (form.github.trim()) contactItems.push(`GitHub: ${form.github.trim()}`)
+
     let formattedText = `# ${form.name}\n`
-    formattedText += `${form.location} | ${form.email} | ${form.phone}\n`
-    if (form.linkedin) formattedText += `LinkedIn: ${form.linkedin} | `
-    if (form.github) formattedText += `GitHub: ${form.github}\n`
+    formattedText += `${contactItems.filter(Boolean).join(' | ')}\n`
     formattedText += `\n## SUMMARY\n${form.summary}\n`
     formattedText += `\n## SKILLS\n${form.skills}\n`
 
