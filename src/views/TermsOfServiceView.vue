@@ -91,7 +91,7 @@
     <section class="terms-section">
       <h2>12. Contact Information</h2>
       <p>For questions about these terms, please contact us at:</p>
-      <p><strong>Email:</strong> legal@resumegen.com</p>
+      <p><strong>Email:</strong> legal@resumegen.pro</p>
     </section>
   </div>
 </template>

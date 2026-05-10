@@ -76,7 +76,7 @@
     <section class="policy-section">
       <h2>9. Contact Us</h2>
       <p>If you have any questions about this privacy policy, please contact us at:</p>
-      <p><strong>Email:</strong> privacy@resumegen.com</p>
+      <p><strong>Email:</strong> privacy@resumegen.pro</p>
     </section>
   </div>
 </template>
