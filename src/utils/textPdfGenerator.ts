@@ -7,7 +7,13 @@ interface PdfSection {
   type: 'heading1' | 'heading2' | 'heading3' | 'paragraph' | 'list' | 'meta'
   text: string
   bold?: boolean
+  links?: PdfLink[]
   inlineText?: Array<{ text: string; bold: boolean }>
+}
+
+interface PdfLink {
+  text: string
+  url: string
 }
 
 interface TemplateConfig {
@@ -268,6 +274,8 @@ export function generateTextBasedPdf(
               metaLineHeight,
               template.metaAlign,
               checkPageBreak,
+              section.links,
+              template.metaSize,
             )
             currentY += ptToMm(SECTION_SPACING.metaBottom)
             break
@@ -431,6 +439,7 @@ function parseMarkdownToSections(markdown: string): PdfSection[] {
       sections.push({
         type: 'meta',
         text: normalizeMetaText(trimmed),
+        links: extractPdfLinks(trimmed),
       })
     }
     // Regular paragraph - check for inline bold
@@ -495,11 +504,57 @@ function parseInlineBold(text: string): Array<{ text: string; bold: boolean }> {
 }
 
 function stripMarkdownMarkers(text: string): string {
-  return text.replace(/\*\*(.*?)\*\*/g, '$1')
+  return stripMarkdownLinks(text).replace(/\*\*(.*?)\*\*/g, '$1')
 }
 
 function stripMarkdownLinks(text: string): string {
   return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+}
+
+function normalizeLinkUrl(url: string): string {
+  const trimmed = url.trim().replace(/[),.;]+$/g, '')
+
+  if (/^[a-z][a-z\d+.-]*:/i.test(trimmed)) {
+    return trimmed
+  }
+
+  return `https://${trimmed.replace(/^\/\//, '')}`
+}
+
+function extractPdfLinks(text: string): PdfLink[] {
+  const links: PdfLink[] = []
+  const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
+  let markdownMatch
+
+  while ((markdownMatch = markdownLinkRegex.exec(text)) !== null) {
+    const label = markdownMatch[1]?.trim()
+    const url = markdownMatch[2]?.trim()
+
+    if (label && url) {
+      links.push({
+        text: label,
+        url: normalizeLinkUrl(url),
+      })
+    }
+  }
+
+  const plainContactRegex =
+    /\b(LinkedIn|GitHub|Portfolio|Website)\s*:\s*(https?:\/\/[^\s|]+|www\.[^\s|]+|[a-z0-9.-]+\.[a-z]{2,}[^\s|]*)/gi
+  let plainMatch
+
+  while ((plainMatch = plainContactRegex.exec(text)) !== null) {
+    const label = plainMatch[1]?.trim()
+    const url = plainMatch[2]?.trim()
+
+    if (label && url) {
+      links.push({
+        text: label,
+        url: normalizeLinkUrl(url),
+      })
+    }
+  }
+
+  return links
 }
 
 function normalizeMetaText(text: string): string {
@@ -550,6 +605,8 @@ function addWrappedText(
   lineHeight: number,
   align: 'left' | 'center' = 'left',
   checkPageBreak?: (y: number, requiredSpace?: number) => number,
+  links: PdfLink[] = [],
+  fontSizePt?: number,
 ): number {
   let lines: string[]
   try {
@@ -574,10 +631,49 @@ function addWrappedText(
       }
     }
     doc.text(line, x, y, { align })
+    addLineLinkAnnotations(doc, line, x, y, lineHeight, align, links, fontSizePt)
     y += lineHeight
   }
 
   return y
+}
+
+function addLineLinkAnnotations(
+  doc: jsPDF,
+  line: string,
+  x: number,
+  y: number,
+  lineHeight: number,
+  align: 'left' | 'center',
+  links: PdfLink[],
+  fontSizePt?: number,
+) {
+  if (links.length === 0 || typeof doc.link !== 'function') {
+    return
+  }
+
+  const lineStartX = align === 'center' ? x - doc.getTextWidth(line) / 2 : x
+  const annotationTop = y - ptToMm(fontSizePt || doc.getFontSize()) * 0.85
+  const annotationHeight = lineHeight * 0.9
+
+  links.forEach((link) => {
+    let searchFrom = 0
+
+    while (searchFrom < line.length) {
+      const linkIndex = line.indexOf(link.text, searchFrom)
+
+      if (linkIndex === -1) {
+        break
+      }
+
+      const textBeforeLink = line.slice(0, linkIndex)
+      const linkX = lineStartX + doc.getTextWidth(textBeforeLink)
+      const linkWidth = doc.getTextWidth(link.text)
+
+      doc.link(linkX, annotationTop, linkWidth, annotationHeight, { url: link.url })
+      searchFrom = linkIndex + link.text.length
+    }
+  })
 }
 
 function addInlineText(
