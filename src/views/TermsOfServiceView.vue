@@ -4,7 +4,7 @@
 <template>
   <div class="terms-of-service container">
     <h1 class="text-display">Terms of Service</h1>
-    <p class="last-updated">Last updated: {{ new Date().toLocaleDateString() }}</p>
+    <p class="last-updated">Last updated: May 10, 2026</p>
 
     <section class="terms-section">
       <h2>1. Acceptance of Terms</h2>

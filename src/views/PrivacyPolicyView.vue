@@ -4,7 +4,7 @@
 <template>
   <div class="privacy-policy container">
     <h1 class="text-display">Privacy Policy</h1>
-    <p class="last-updated">Last updated: {{ new Date().toLocaleDateString() }}</p>
+    <p class="last-updated">Last updated: May 10, 2026</p>
 
     <section class="policy-section">
       <h2>1. Information We Collect</h2>
