@@ -7,21 +7,35 @@ type NavigatorWithFileShare = Navigator & {
   canShare?: (data: ShareData) => boolean
 }
 
+type DownloadDevice = {
+  isIOSWebKit: boolean
+  isMobile: boolean
+}
+
+type SaveMethod = 'downloaded' | 'opened' | 'shared'
+
 export function useResumeExporter() {
-  const isIOSWebKit = () => {
+  const getDownloadDevice = (): DownloadDevice => {
     if (typeof navigator === 'undefined') {
-      return false
+      return {
+        isIOSWebKit: false,
+        isMobile: false,
+      }
     }
 
     const ua = navigator.userAgent || navigator.vendor || ''
     const isIOS =
       /iPad|iPhone|iPod/.test(ua) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    const isAndroid = /Android/i.test(ua)
+    const isMobile = isIOS || isAndroid || /Mobile|Tablet/i.test(ua)
 
-    return isIOS && /AppleWebKit/i.test(ua)
+    return {
+      isIOSWebKit: isIOS && /AppleWebKit/i.test(ua),
+      isMobile,
+    }
   }
 
-  // Convert a Blob to a base64 data: URL — always navigable in iOS Safari
   const blobToDataUrl = (blob: Blob): Promise<string> =>
     new Promise((resolve, reject) => {
       const reader = new FileReader()
@@ -30,133 +44,172 @@ export function useResumeExporter() {
       reader.readAsDataURL(blob)
     })
 
-  const createPendingDownloadWindow = () => {
-    if (!isIOSWebKit()) {
+  const createPreparedDownloadWindow = (fileName: string, device: DownloadDevice) => {
+    if (!device.isIOSWebKit) {
       return null
     }
 
-    logger.info('[iOS] Opening pending download window before blob is ready')
-    const pendingWindow = window.open('', '_blank')
-    if (!pendingWindow) {
-      logger.warn('[iOS] window.open blocked — popup guard may be active')
+    logger.info(`[Mobile Download] Opening prepared window for "${fileName}"`)
+    const preparedWindow = window.open('', '_blank')
+
+    if (!preparedWindow) {
+      logger.warn('[Mobile Download] Prepared window blocked by browser')
+      return null
     }
-    pendingWindow?.document.write(
-      '<p style="font-family: system-ui, sans-serif;">Preparing your file...</p>',
-    )
-    return pendingWindow
+
+    preparedWindow.document.write(`
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Preparing download</title>
+        </head>
+        <body style="font-family: system-ui, sans-serif; padding: 24px; line-height: 1.5;">
+          <p>Preparing <strong>${fileName}</strong>...</p>
+          <p style="color: #475569;">When it opens, use Share and choose Save to Files.</p>
+        </body>
+      </html>
+    `)
+
+    return preparedWindow
   }
 
-  const canUseNativeFileShare = (fileName: string, mimeType: string) => {
-    if (!isIOSWebKit() || typeof File === 'undefined' || typeof navigator.share !== 'function') {
+  const canShareFile = (file: File) => {
+    if (typeof navigator === 'undefined' || typeof File === 'undefined') {
       return false
     }
 
-    const file = new File([], fileName, { type: mimeType })
+    if (typeof navigator.share !== 'function') {
+      return false
+    }
+
+    const navigatorWithShare = navigator as NavigatorWithFileShare
+    const shareData: ShareData = { files: [file], title: file.name }
+
+    return typeof navigatorWithShare.canShare === 'function'
+      ? navigatorWithShare.canShare(shareData)
+      : true
+  }
+
+  const shareBlobOnMobile = async (blob: Blob, fileName: string, mimeType: string) => {
+    if (typeof File === 'undefined' || typeof navigator.share !== 'function') {
+      return false
+    }
+
+    const file = new File([blob], fileName, { type: mimeType })
     const shareData: ShareData = { files: [file], title: fileName }
-    const navigatorWithShare = navigator as NavigatorWithFileShare
 
-    const supported =
-      typeof navigatorWithShare.canShare === 'function'
-        ? navigatorWithShare.canShare(shareData)
-        : true
-    logger.info(`[iOS] canUseNativeFileShare("${fileName}") → ${supported}`)
-    return supported
-  }
-
-  const shareBlobOnIOS = async (blob: Blob, fileName: string) => {
-    if (!isIOSWebKit() || typeof File === 'undefined' || typeof navigator.share !== 'function') {
-      return false
-    }
-
-    const file = new File([blob], fileName, {
-      type: blob.type || 'application/octet-stream',
-    })
-    const shareData: ShareData = {
-      files: [file],
-      title: fileName,
-    }
-    const navigatorWithShare = navigator as NavigatorWithFileShare
-
-    if (
-      typeof navigatorWithShare.canShare === 'function' &&
-      !navigatorWithShare.canShare(shareData)
-    ) {
-      logger.warn(`[iOS] navigator.canShare() returned false for "${fileName}" — skipping share sheet`)
+    if (!canShareFile(file)) {
+      logger.info(`[Mobile Download] File sharing unsupported for "${fileName}"`)
       return false
     }
 
     try {
-      logger.info(`[iOS] Invoking navigator.share() for "${fileName}"`)
+      logger.info(`[Mobile Download] Opening share sheet for "${fileName}"`)
       await navigator.share(shareData)
-      logger.info(`[iOS] navigator.share() resolved for "${fileName}"`)
       return true
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        logger.info(`[iOS] share cancelled by user for "${fileName}"`)
+        logger.info(`[Mobile Download] Share cancelled for "${fileName}"`)
         throw new Error('UserCancelledError')
       }
-      logger.warn(`[iOS] navigator.share() failed:`, error)
+      logger.warn(`[Mobile Download] Share failed for "${fileName}"`, error)
       return false
     }
   }
 
-  const triggerBlobDownload = async (
+  const triggerAnchorDownload = (blob: Blob, fileName: string) => {
+    const objectUrl = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.style.display = 'none'
+    link.href = objectUrl
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
+  }
+
+  const openBlobInPreparedWindow = async (
     blob: Blob,
     fileName: string,
-    pendingWindow: Window | null = null,
-  ) => {
+    preparedWindow: Window | null,
+  ): Promise<boolean> => {
+    const targetWindow = preparedWindow && !preparedWindow.closed ? preparedWindow : null
+
+    if (!targetWindow) {
+      logger.warn(`[Mobile Download] No prepared window available for "${fileName}"`)
+      return false
+    }
+
     const objectUrl = URL.createObjectURL(blob)
 
     try {
-      if (isIOSWebKit()) {
-        const hadPendingWindow = pendingWindow !== null && !pendingWindow.closed
-        const targetWindow = hadPendingWindow
-          ? pendingWindow
-          : window.open('', '_blank')
-
-        logger.info(`[iOS] triggerBlobDownload — hadPendingWindow: ${hadPendingWindow} | targetWindow opened: ${!!targetWindow}`)
-
-        if (targetWindow) {
-          // Try blob: URL first (faster, no base64 overhead)
-          try {
-            targetWindow.location.href = objectUrl
-            logger.info('[iOS] Navigated target window to blob: URL')
-          } catch (blobNavErr) {
-            // blob: navigation failed (e.g. cross-origin restriction) — fall back to data: URL
-            logger.warn('[iOS] blob: URL navigation failed — falling back to data: URL', blobNavErr)
-            const dataUrl = await blobToDataUrl(blob)
-            targetWindow.location.href = dataUrl
-            logger.info('[iOS] Navigated target window to data: URL (fallback)')
-          }
-        } else {
-          // No window available — fall back to data: URL on current page
-          logger.warn('[iOS] Could not open target window — navigating current page to data: URL')
-          const dataUrl = await blobToDataUrl(blob)
-          window.location.href = dataUrl
-        }
-        return
-      }
-
-      // Desktop: standard anchor download
-      const link = document.createElement('a')
-      link.style.display = 'none'
-      link.href = objectUrl
-      link.download = fileName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
+      targetWindow.location.href = objectUrl
+      logger.info(`[Mobile Download] Opened "${fileName}" from blob URL`)
+      return true
+    } catch (error) {
+      logger.warn(`[Mobile Download] Blob URL open failed for "${fileName}", trying data URL`, error)
+      const dataUrl = await blobToDataUrl(blob)
+      targetWindow.location.href = dataUrl
+      return true
     } finally {
-      setTimeout(
-        () => {
-          URL.revokeObjectURL(objectUrl)
-        },
-        isIOSWebKit() ? 60000 : 1000,
-      )
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000)
     }
   }
 
+  const saveBlob = async (
+    blob: Blob,
+    fileName: string,
+    mimeType: string,
+    device: DownloadDevice,
+    preparedWindow: Window | null,
+  ): Promise<SaveMethod> => {
+    if (device.isMobile && (await shareBlobOnMobile(blob, fileName, mimeType))) {
+      preparedWindow?.close()
+      return 'shared'
+    }
+
+    if (device.isIOSWebKit && (await openBlobInPreparedWindow(blob, fileName, preparedWindow))) {
+      return 'opened'
+    }
+
+    preparedWindow?.close()
+    triggerAnchorDownload(blob, fileName)
+    return 'downloaded'
+  }
+
+  const buildDocBlob = (
+    generatedResumeHtml: string,
+    companyName: string,
+    selectedTemplate: string,
+  ) => {
+    const docTitle = companyName ? `Resume — ${companyName}` : 'Resume'
+    const content = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office'
+            xmlns:w='urn:schemas-microsoft-com:office:word'
+            xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>${docTitle}</title>
+        <style>
+          @page { size: 21cm 29.7cm; margin: 1.27cm; }
+          body { font-family: Arial, sans-serif; line-height: 1.4; color: #1a202c; }
+          ${getTemplateStyles(selectedTemplate, true)}
+        </style>
+      </head>
+      <body>
+        ${generatedResumeHtml}
+      </body>
+      </html>
+    `
+
+    return new Blob(['\ufeff', content], { type: 'application/msword;charset=utf-8' })
+  }
+
   const downloadPDF = async (
-    resumeContainer: HTMLElement | null,
+    _resumeContainer: HTMLElement | null,
     generatedResumeMarkdown: string,
     companyName: string,
     selectedTemplate: string,
@@ -166,13 +219,13 @@ export function useResumeExporter() {
   ) => {
     if (!generatedResumeMarkdown) return
 
-    const onIOS = isIOSWebKit()
+    const device = getDownloadDevice()
     const fileName = `${getFilename(generatedResumeMarkdown, companyName)}.pdf`
-    logger.info(`[Download][PDF] Starting — fileName: "${fileName}" | iOS: ${onIOS}`)
-
-    const useShare = canUseNativeFileShare(fileName, 'application/pdf')
-    const pendingWindow = useShare ? null : createPendingDownloadWindow()
-    logger.info(`[Download][PDF] useShare: ${useShare} | pendingWindow opened: ${!!pendingWindow}`)
+    const mimeType = 'application/pdf'
+    const preparedWindow = createPreparedDownloadWindow(fileName, device)
+    logger.info(
+      `[Download][PDF] Starting — fileName: "${fileName}" | mobile: ${device.isMobile} | iOS: ${device.isIOSWebKit} | preparedWindow: ${!!preparedWindow}`,
+    )
 
     try {
       onProgress('Generating ATS-friendly text-based PDF...')
@@ -186,23 +239,18 @@ export function useResumeExporter() {
       )
       logger.info(`[Download][PDF] Blob generated — size: ${(pdfBlob.size / 1024).toFixed(1)} KB | type: "${pdfBlob.type}"`)
 
-      if (await shareBlobOnIOS(pdfBlob, fileName)) {
-        pendingWindow?.close()
-        onSuccess('PDF ready. Choose Save to Files from the share sheet.')
-        return
-      }
-
-      logger.info('[Download][PDF] Proceeding with triggerBlobDownload…')
-      await triggerBlobDownload(pdfBlob, fileName, pendingWindow)
+      const saveMethod = await saveBlob(pdfBlob, fileName, mimeType, device, preparedWindow)
 
       onSuccess(
-        onIOS
-          ? 'PDF opened. Use Share → Save to Files to keep it.'
+        saveMethod === 'shared'
+          ? 'PDF ready. Choose Save to Files from the share sheet.'
+          : saveMethod === 'opened'
+            ? 'PDF opened. Use Share → Save to Files to keep it.'
           : 'ATS-friendly PDF with selectable text downloaded!',
       )
       logger.info('[Download][PDF] Download flow complete')
     } catch (error) {
-      pendingWindow?.close()
+      preparedWindow?.close()
       if (error instanceof Error && error.message === 'UserCancelledError') {
         logger.info('[Download][PDF] User cancelled the share dialog.')
         return
@@ -222,59 +270,37 @@ export function useResumeExporter() {
   ) => {
     if (!generatedResumeHtml) return
 
-    const onIOS = isIOSWebKit()
-    let pendingWindow: Window | null = null
+    const device = getDownloadDevice()
+    let preparedWindow: Window | null = null
 
     try {
-      // Save as .doc with Word XML namespaces — opens in Word without needing Office installed
       const baseName = getFilename(generatedResumeMarkdown, companyName)
       const fileName = `${baseName}.doc`
-      logger.info(`[Download][DOC] Starting — fileName: "${fileName}" | iOS: ${onIOS}`)
+      const mimeType = 'application/msword'
+      preparedWindow = createPreparedDownloadWindow(fileName, device)
+      logger.info(
+        `[Download][DOC] Starting — fileName: "${fileName}" | mobile: ${device.isMobile} | iOS: ${device.isIOSWebKit} | preparedWindow: ${!!preparedWindow}`,
+      )
 
-      const useShare = canUseNativeFileShare(fileName, 'application/msword')
-      pendingWindow = useShare ? null : createPendingDownloadWindow()
-      logger.info(`[Download][DOC] useShare: ${useShare} | pendingWindow opened: ${!!pendingWindow}`)
-
-      const docTitle = companyName ? `Resume — ${companyName}` : 'Resume'
-      const content = `
-            <html xmlns:o='urn:schemas-microsoft-com:office:office' 
-                  xmlns:w='urn:schemas-microsoft-com:office:word' 
-                  xmlns='http://www.w3.org/TR/REC-html40'>
-            <head>
-                <meta charset='utf-8'>
-                <title>${docTitle}</title>
-                <style>
-                    @page { size: 21cm 29.7cm; margin: 1.27cm; }
-                    body { font-family: Arial, sans-serif; line-height: 1.4; color: #1a202c; }
-                    ${getTemplateStyles(selectedTemplate, true)}
-                </style>
-            </head>
-            <body>
-                ${generatedResumeHtml}
-            </body>
-            </html>
-        `
-
-      const blob = new Blob(['\ufeff', content], { type: 'application/msword;charset=utf-8' })
+      const blob = buildDocBlob(
+        generatedResumeHtml,
+        companyName,
+        selectedTemplate,
+      )
       logger.info(`[Download][DOC] Blob created — size: ${(blob.size / 1024).toFixed(1)} KB`)
 
-      if (await shareBlobOnIOS(blob, fileName)) {
-        pendingWindow?.close()
-        onSuccess('DOC ready. Choose Save to Files from the share sheet.')
-        return
-      }
-
-      logger.info('[Download][DOC] Proceeding with triggerBlobDownload…')
-      await triggerBlobDownload(blob, fileName, pendingWindow)
+      const saveMethod = await saveBlob(blob, fileName, mimeType, device, preparedWindow)
 
       onSuccess(
-        onIOS
-          ? 'DOC opened. Use Share → Save to Files to keep it.'
+        saveMethod === 'shared'
+          ? 'DOC ready. Choose Save to Files from the share sheet.'
+          : saveMethod === 'opened'
+            ? 'DOC opened. Use Share → Save to Files to keep it.'
           : 'DOC downloaded successfully!',
       )
       logger.info('[Download][DOC] Download flow complete')
     } catch (error) {
-      pendingWindow?.close()
+      preparedWindow?.close()
       if (error instanceof Error && error.message === 'UserCancelledError') {
         logger.info('[Download][DOC] User cancelled the share dialog.')
         return
