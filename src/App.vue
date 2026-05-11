@@ -1,7 +1,45 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
+import { computed } from 'vue';
+import { useHead } from '@unhead/vue';
+import { useRoute, useRouter } from 'vue-router';
+import { getAbsoluteUrl, type SeoMeta } from '@/utils/seo';
+
 const router = useRouter();
+const route = useRoute();
 const goHome = () => router.push('/');
+
+const seoMeta = computed(() => route.meta as SeoMeta);
+const canonicalUrl = computed(() => getAbsoluteUrl(route.path));
+const previewImage = 'https://www.resumegen.pro/og-image.png';
+
+useHead(() => ({
+  title: seoMeta.value.title,
+  link: [
+    {
+      rel: 'canonical',
+      href: canonicalUrl.value,
+    },
+  ],
+  meta: [
+    { name: 'title', content: seoMeta.value.title },
+    { name: 'description', content: seoMeta.value.description },
+    { name: 'robots', content: seoMeta.value.robots || 'index, follow' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:site_name', content: 'ResumeGen' },
+    { property: 'og:url', content: canonicalUrl.value },
+    { property: 'og:title', content: seoMeta.value.title },
+    { property: 'og:description', content: seoMeta.value.description },
+    { property: 'og:image', content: seoMeta.value.image || previewImage },
+    { property: 'og:image:width', content: '1200' },
+    { property: 'og:image:height', content: '630' },
+    { property: 'og:image:alt', content: 'ResumeGen AI resume optimizer preview' },
+    { property: 'twitter:card', content: 'summary_large_image' },
+    { property: 'twitter:url', content: canonicalUrl.value },
+    { property: 'twitter:title', content: seoMeta.value.title },
+    { property: 'twitter:description', content: seoMeta.value.description },
+    { property: 'twitter:image', content: seoMeta.value.image || previewImage },
+  ],
+}));
 </script>
 
 <template>
