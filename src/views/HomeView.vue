@@ -27,8 +27,12 @@
         </p>
 
         <div class="cta-group fade-in" style="animation-delay: 320ms">
-          <RouterLink to="/create-resume" class="btn btn-primary btn-lg">
-            Optimise My Resume
+          <RouterLink to="/create-resume" class="btn btn-primary btn-lg hero-cta" aria-label="Optimize my resume for free">
+            <span class="cta-shine" aria-hidden="true"></span>
+            <span class="cta-copy">
+              <span class="cta-main">Optimize My Resume</span>
+              <span class="cta-note">Free ATS match in seconds</span>
+            </span>
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
               stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M5 12h14M12 5l7 7-7 7" />
@@ -38,9 +42,9 @@
         </div>
 
         <div class="hero-proof fade-in" style="animation-delay: 420ms">
-          <span>✅ No account needed</span>
-          <span>✅ Local file parsing</span>
-          <span>✅ Works with PDF & DOCX</span>
+          <span>No account needed</span>
+          <span>Local file parsing</span>
+          <span>Works with PDF & DOCX</span>
         </div>
       </div>
     </section>
@@ -386,7 +390,7 @@
 }
 
 .btn-primary {
-  background: var(--color-primary);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: white;
   padding: var(--space-3) var(--space-6);
   box-shadow: 0 4px 20px hsla(var(--hue-primary), 80%, 60%, 0.4);
@@ -401,6 +405,91 @@
 .btn-lg {
   padding: var(--space-4) var(--space-8);
   font-size: 1.05rem;
+}
+
+.hero-cta {
+  isolation: isolate;
+  min-width: 260px;
+  min-height: 68px;
+  overflow: hidden;
+  padding: var(--space-3) var(--space-5);
+  border: 1px solid hsl(0 0% 100% / 0.32);
+  box-shadow:
+    0 14px 34px hsla(var(--hue-primary), 80%, 50%, 0.36),
+    0 0 0 7px hsla(var(--hue-primary), 80%, 60%, 0.1);
+  animation: cta-breathe 2.8s ease-in-out infinite;
+}
+
+.hero-cta:hover {
+  animation-play-state: paused;
+}
+
+.hero-cta svg {
+  flex-shrink: 0;
+  transition: transform var(--transition-base);
+}
+
+.hero-cta:hover svg {
+  transform: translateX(3px);
+}
+
+.cta-shine {
+  position: absolute;
+  inset: -80% auto -80% -40%;
+  z-index: -1;
+  width: 38%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.42), transparent);
+  animation: cta-shine 3.4s ease-in-out infinite;
+}
+
+.cta-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+
+.cta-main {
+  font-size: 1.04rem;
+}
+
+.cta-note {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  opacity: 0.86;
+  text-transform: uppercase;
+}
+
+@keyframes cta-breathe {
+
+  0%,
+  100% {
+    box-shadow:
+      0 14px 34px hsla(var(--hue-primary), 80%, 50%, 0.36),
+      0 0 0 7px hsla(var(--hue-primary), 80%, 60%, 0.1);
+  }
+
+  50% {
+    box-shadow:
+      0 18px 42px hsla(var(--hue-secondary), 80%, 50%, 0.42),
+      0 0 0 11px hsla(var(--hue-secondary), 80%, 60%, 0.12);
+  }
+}
+
+@keyframes cta-shine {
+
+  0%,
+  42% {
+    left: -42%;
+  }
+
+  70%,
+  100% {
+    left: 112%;
+  }
 }
 
 .btn-ghost {
@@ -424,6 +513,18 @@
   font-size: 0.88rem;
   color: var(--color-text-muted);
   font-weight: 500;
+}
+
+.hero-proof span::before {
+  content: '';
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: var(--space-2);
+  border-radius: 50%;
+  background: hsl(var(--hue-success), 70%, 45%);
+  box-shadow: 0 0 0 3px hsla(var(--hue-success), 70%, 45%, 0.14);
+  vertical-align: 0.08em;
 }
 
 /* ─── Stats Bar ───────────────────────────────────────────────────────────── */
@@ -671,6 +772,24 @@
     font-size: 2.5rem;
   }
 
+  .cta-group {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .cta-group .btn {
+    width: 100%;
+  }
+
+  .hero-cta {
+    min-width: 0;
+  }
+
+  .hero-cta .cta-copy {
+    flex: 1;
+    align-items: center;
+  }
+
   .final-cta h2 {
     font-size: 1.9rem;
   }
@@ -679,6 +798,15 @@
     flex-direction: column;
     align-items: center;
     gap: var(--space-2);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-cta,
+  .cta-shine,
+  .badge-dot,
+  .fade-in {
+    animation: none;
   }
 }
 </style>

@@ -8,7 +8,17 @@ const goHome = () => router.push('/');
   <header>
     <div class="container navbar">
       <div class="logo">
-        <span class="logo-text" @click="goHome" role="button" tabindex="0" aria-label="Go to home page">ResumeGen</span>
+        <span
+          class="logo-text"
+          @click="goHome"
+          @keydown.enter.prevent="goHome"
+          @keydown.space.prevent="goHome"
+          role="button"
+          tabindex="0"
+          aria-label="Go to home page"
+        >
+          ResumeGen
+        </span>
       </div>
       <nav aria-label="Main navigation">
         <RouterLink to="/">Home</RouterLink>
@@ -42,13 +52,13 @@ header {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: hsla(0, 0%, 100%, 0);
+  background: hsl(220 20% 98% / 0.82);
   border-bottom: 1px solid var(--color-border);
 }
 
 @media (prefers-color-scheme: dark) {
   header {
-    background: hsla(0, 0%, 100%, 0);
+    background: hsl(220 40% 8% / 0.78);
   }
 }
 
@@ -59,6 +69,8 @@ header {
 }
 
 .logo-text {
+  display: inline-flex;
+  border-radius: var(--radius-sm);
   font-family: var(--font-family-display);
   font-weight: 800;
   font-size: 1.5rem;
@@ -67,6 +79,11 @@ header {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   cursor: pointer;
+}
+
+.logo-text:focus-visible {
+  outline: 3px solid hsla(var(--hue-primary), 80%, 60%, 0.35);
+  outline-offset: 4px;
 }
 
 nav {

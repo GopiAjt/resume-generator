@@ -428,6 +428,8 @@ const onStartOver = () => {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-width: 235px;
+  justify-content: center;
 }
 
 .btn-spinner {
@@ -506,6 +508,7 @@ button:disabled {
   justify-content: space-between;
   min-width: 320px;
   max-width: 500px;
+  width: calc(100vw - var(--space-8));
   padding: var(--space-4) var(--space-6);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
@@ -591,6 +594,16 @@ button:disabled {
     flex-direction: column;
     gap: var(--space-4);
     text-align: center;
+  }
+
+  .actions,
+  .actions .btn {
+    width: 100%;
+  }
+
+  .loading-step-text {
+    min-width: 0;
+    width: 100%;
   }
 }
 </style>
