@@ -11,6 +11,9 @@ const goHome = () => router.push('/');
 const seoMeta = computed(() => route.meta as SeoMeta);
 const canonicalUrl = computed(() => getAbsoluteUrl(route.path));
 const previewImage = 'https://www.resumegen.pro/og-image.png';
+const keywordMeta = computed(() =>
+  seoMeta.value.keywords ? [{ name: 'keywords', content: seoMeta.value.keywords }] : [],
+);
 
 useHead(() => ({
   title: seoMeta.value.title,
@@ -23,6 +26,7 @@ useHead(() => ({
   meta: [
     { name: 'title', content: seoMeta.value.title },
     { name: 'description', content: seoMeta.value.description },
+    ...keywordMeta.value,
     { name: 'robots', content: seoMeta.value.robots || 'index, follow' },
     { property: 'og:type', content: 'website' },
     { property: 'og:site_name', content: 'ResumeGen' },
@@ -76,6 +80,11 @@ useHead(() => ({
     <div class="container">
       <p style="font-size: smaller;">&copy; {{ new Date().getFullYear() }} ResumeGen. All rights reserved.</p>
       <nav class="footer-nav" aria-label="Footer navigation">
+        <RouterLink to="/resume-generator">Resume Generator</RouterLink>
+        <RouterLink to="/free-resume-builder">Free Resume Builder</RouterLink>
+        <RouterLink to="/ats-resume-maker">ATS Resume Maker</RouterLink>
+        <RouterLink to="/professional-resume-template">Resume Templates</RouterLink>
+        <RouterLink to="/ai-resume-generator">AI Resume Generator</RouterLink>
         <RouterLink to="/privacy">Privacy Policy</RouterLink>
         <RouterLink to="/terms">Terms of Service</RouterLink>
       </nav>
@@ -157,6 +166,7 @@ footer {
   justify-content: center;
   gap: var(--space-6);
   margin-top: var(--space-4);
+  flex-wrap: wrap;
 }
 
 .footer-nav a {

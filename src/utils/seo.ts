@@ -4,6 +4,7 @@ const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`
 export type SeoMeta = {
   title: string
   description: string
+  keywords?: string
   path?: string
   image?: string
   robots?: string
@@ -60,6 +61,9 @@ export const updateSeoMeta = (meta: SeoMeta) => {
 
   setMetaByName('title', meta.title)
   setMetaByName('description', meta.description)
+  if (meta.keywords) {
+    setMetaByName('keywords', meta.keywords)
+  }
   setMetaByName('robots', robots)
 
   setMetaByProperty('og:type', 'website')

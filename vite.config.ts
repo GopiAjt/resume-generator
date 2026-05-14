@@ -3,22 +3,29 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, type UserConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import { seoLandingPageByPath, seoLandingPages } from './src/data/seoLandingPages'
 
-const routeSeo: Record<string, { title: string; description: string }> = {
+const routeSeo: Record<string, { title: string; description: string; keywords?: string }> = {
   '/': {
-    title: 'ResumeGen - Free AI Resume Optimizer and ATS Resume Builder',
+    title: 'Resume Generator - Free AI Resume Builder and ATS Resume Maker | ResumeGen',
     description:
-      'Optimize your resume for any job description with AI. Compare ATS keyword scores, tailor bullet points, and download a polished PDF or DOC resume for free.',
+      'Use ResumeGen as a free resume builder, ATS resume maker, and AI resume generator to create professional resume templates tailored to any job description.',
+    keywords:
+      'resume generator, free resume builder, ATS resume maker, professional resume template, AI resume generator',
   },
   '/create-resume': {
-    title: 'Create a Tailored Resume - Free AI Resume Optimizer | ResumeGen',
+    title: 'Create a Resume - Free Resume Builder and ATS Resume Maker | ResumeGen',
     description:
-      'Upload your resume, paste a job description, and generate a tailored ATS-friendly resume with AI. Download your optimized resume as PDF or DOC.',
+      'Create a professional resume template with ResumeGen, a free resume builder and ATS resume maker powered by AI. Upload, tailor, and download your resume as PDF or DOC.',
+    keywords:
+      'free resume builder, ATS resume maker, AI resume generator, professional resume template, resume generator',
   },
   '/about': {
-    title: 'About ResumeGen - AI Resume Optimizer',
+    title: 'About ResumeGen - Free AI Resume Generator and ATS Resume Maker',
     description:
-      'Learn how ResumeGen helps job seekers tailor resumes to job descriptions with ATS-friendly formatting, AI keyword matching, and privacy-conscious file parsing.',
+      'Learn how ResumeGen helps job seekers create ATS-friendly resumes with a free AI resume generator, professional resume templates, and privacy-conscious file parsing.',
+    keywords:
+      'AI resume generator, ATS resume maker, professional resume template, resume generator',
   },
   '/privacy': {
     title: 'Privacy Policy - ResumeGen',
@@ -30,6 +37,16 @@ const routeSeo: Record<string, { title: string; description: string }> = {
     description:
       'Review the terms for using ResumeGen, including AI-generated resume content, user responsibilities, export options, and service limitations.',
   },
+  ...Object.fromEntries(
+    seoLandingPages.map((page) => [
+      page.path,
+      {
+        title: page.title,
+        description: page.description,
+        keywords: page.keyword,
+      },
+    ]),
+  ),
 }
 
 const siteUrl = 'https://www.resumegen.pro'
@@ -51,12 +68,58 @@ const applyRouteHead = (route: string, html: string) => {
   const canonical = `${siteUrl}${normalizedRoute === '/' ? '/' : normalizedRoute}`
   const title = escapeHtml(meta.title)
   const description = escapeHtml(meta.description)
+  const keywords = escapeHtml(meta.keywords || routeSeo['/']!.keywords || '')
+  const landingPage = seoLandingPageByPath.get(normalizedRoute)
+  const routeSchema = landingPage
+    ? [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: landingPage.faqs.map((faq) => ({
+            '@type': 'Question',
+            name: faq.question,
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: faq.answer,
+            },
+          })),
+        },
+        {
+          '@context': 'https://schema.org',
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            {
+              '@type': 'ListItem',
+              position: 1,
+              name: 'Home',
+              item: `${siteUrl}/`,
+            },
+            {
+              '@type': 'ListItem',
+              position: 2,
+              name: landingPage.keyword,
+              item: canonical,
+            },
+          ],
+        },
+      ]
+    : []
+  const schemaHtml = routeSchema
+    .map(
+      (schema) =>
+        `<script type="application/ld+json">${JSON.stringify(schema).replace(/</g, '\\u003c')}</script>`,
+    )
+    .join('')
 
   return [
     [/<title>.*?<\/title>/, `<title>${title}</title>`],
     [/<link rel="canonical" href="[^"]*">/, `<link rel="canonical" href="${canonical}">`],
     [/<meta name="title" content="[^"]*">/, `<meta name="title" content="${title}">`],
     [/<meta name="description" content="[^"]*">/, `<meta name="description" content="${description}">`],
+    [
+      /<meta name="keywords" content="[^"]*">/,
+      `<meta name="keywords" content="${keywords}">`,
+    ],
     [/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${canonical}">`],
     [/<meta property="og:title" content="[^"]*">/, `<meta property="og:title" content="${title}">`],
     [
@@ -82,7 +145,7 @@ const applyRouteHead = (route: string, html: string) => {
     ],
   ].reduce((updatedHtml, [pattern, replacement]) => {
     return replaceTagContent(updatedHtml, pattern as RegExp, replacement as string)
-  }, html)
+  }, schemaHtml ? html.replace('</head>', `${schemaHtml}</head>`) : html)
 }
 
 // https://vite.dev/config/

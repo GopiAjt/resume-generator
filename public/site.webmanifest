@@ -1,6 +1,9 @@
 {
   "name": "ResumeGen",
   "short_name": "ResumeGen",
+  "description": "ResumeGen is a resume generator, free resume builder, ATS resume maker, and AI resume generator for professional resume templates.",
+  "start_url": "/",
+  "scope": "/",
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -15,5 +18,6 @@
   ],
   "theme_color": "#2563eb",
   "background_color": "#ffffff",
-  "display": "standalone"
+  "display": "standalone",
+  "categories": ["business", "productivity", "utilities"]
 }

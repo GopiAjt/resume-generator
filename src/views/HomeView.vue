@@ -13,17 +13,17 @@
       <div class="container hero-inner">
         <div class="hero-badge fade-in" style="animation-delay: 50ms">
           <span class="badge-dot"></span>
-          AI-Powered · Free to Use · No Sign-up Required
+          Resume Generator · Free Resume Builder · No Sign-up Required
         </div>
 
         <h1 class="hero-heading fade-in" style="animation-delay: 120ms">
-          Land Your Dream Job<br>
-          <span class="gradient-text">10× Faster</span> with AI
+          Free Resume Builder<br>
+          <span class="gradient-text">and AI Resume Generator</span>
         </h1>
 
         <p class="hero-sub fade-in" style="animation-delay: 220ms">
-          Paste a job description. Upload your resume. Get a perfectly tailored,
-          ATS-optimised resume in seconds — not hours.
+          Create a professional resume template, tailor it to a job description, and use
+          our ATS resume maker to improve keyword match in seconds.
         </p>
 
         <div class="cta-group fade-in" style="animation-delay: 320ms">
@@ -42,9 +42,9 @@
         </div>
 
         <div class="hero-proof fade-in" style="animation-delay: 420ms">
+          <span>ATS resume maker</span>
           <span>No account needed</span>
           <span>Local file parsing</span>
-          <span>Works with PDF & DOCX</span>
         </div>
       </div>
     </section>
@@ -54,7 +54,7 @@
       <div class="container stats-grid">
         <div class="stat-item">
           <span class="stat-number">4</span>
-          <span class="stat-label">Premium Templates</span>
+          <span class="stat-label">Professional Resume Templates</span>
         </div>
         <div class="stat-divider"></div>
         <div class="stat-item">
@@ -73,7 +73,7 @@
     <section class="how-it-works container" id="how-it-works">
       <div class="section-header">
         <p class="section-eyebrow">Simple by Design</p>
-        <h2 class="section-title">Three Steps to a Winning Resume</h2>
+        <h2 class="section-title">Three Steps with Our Resume Generator</h2>
       </div>
 
       <div class="steps-grid">
@@ -88,7 +88,7 @@
             </svg>
           </div>
           <h3>Upload Your Resume</h3>
-          <p>Drop in your existing PDF or DOCX — or fill in your details manually using our structured form.</p>
+          <p>Drop in your existing PDF or DOCX, or start from scratch with the free resume builder form.</p>
         </div>
 
         <div class="step-connector">
@@ -130,8 +130,8 @@
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
           </div>
-          <h3>Download Your Tailored Resume</h3>
-          <p>Get an ATS score, a full optimisation report, and download your resume as a PDF or DOC instantly.</p>
+          <h3>Download Your ATS-Friendly Resume</h3>
+          <p>Get an ATS score, a full optimization report, and download your professional resume template as a PDF or DOC instantly.</p>
         </div>
       </div>
     </section>
@@ -140,7 +140,7 @@
     <section class="features-section container">
       <div class="section-header">
         <p class="section-eyebrow">Why ResumeGen</p>
-        <h2 class="section-title">Everything You Need to Get Shortlisted</h2>
+        <h2 class="section-title">Everything You Need in a Free Resume Builder</h2>
       </div>
 
       <div class="features-grid">
@@ -152,8 +152,8 @@
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
           </div>
-          <h3>ATS Score Analysis</h3>
-          <p>See your original vs. tailored ATS score side-by-side so you know exactly how much you improved.</p>
+          <h3>ATS Resume Maker</h3>
+          <p>See your original vs. tailored ATS score side-by-side so you know exactly how much your match improved.</p>
         </div>
 
         <div class="feature-card">
@@ -164,8 +164,8 @@
                 points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
             </svg>
           </div>
-          <h3>4 Premium Templates</h3>
-          <p>Modern Blue, Executive, Minimal, and Technical — each professionally styled and print-ready.</p>
+          <h3>4 Professional Resume Templates</h3>
+          <p>Modern Blue, Executive, Minimal, and Technical templates are professionally styled and print-ready.</p>
         </div>
 
         <div class="feature-card">
@@ -189,8 +189,8 @@
               <polyline points="8 6 2 12 8 18" />
             </svg>
           </div>
-          <h3>Keyword Optimised</h3>
-          <p>The AI extracts JD-critical keywords and weaves them into your bullet points naturally and honestly.</p>
+          <h3>AI Resume Generator</h3>
+          <p>The AI extracts job-critical keywords and weaves them into your bullet points naturally and honestly.</p>
         </div>
 
         <div class="feature-card">
@@ -220,12 +220,28 @@
       </div>
     </section>
 
+    <!-- ═════════════════════════ SEO TOPICS ════════════════════════════ -->
+    <section class="seo-links-section container" aria-labelledby="resume-tools-title">
+      <div class="section-header">
+        <p class="section-eyebrow">Resume Tools</p>
+        <h2 id="resume-tools-title" class="section-title">Build the Resume You Need</h2>
+      </div>
+
+      <div class="seo-links-grid">
+        <RouterLink to="/resume-generator">Resume Generator</RouterLink>
+        <RouterLink to="/free-resume-builder">Free Resume Builder</RouterLink>
+        <RouterLink to="/ats-resume-maker">ATS Resume Maker</RouterLink>
+        <RouterLink to="/professional-resume-template">Professional Resume Template</RouterLink>
+        <RouterLink to="/ai-resume-generator">AI Resume Generator</RouterLink>
+      </div>
+    </section>
+
     <!-- ══════════════════════════ FINAL CTA ══════════════════════════════ -->
     <section class="final-cta">
       <div class="final-cta-glow"></div>
       <div class="container final-cta-inner">
-        <h2>Ready to Get More Interviews?</h2>
-        <p>Stop sending the same generic resume to every job. Tailor it in seconds — for free.</p>
+        <h2>Ready to Build a Better Resume?</h2>
+        <p>Use ResumeGen as your resume generator, free resume builder, and ATS resume maker for every application.</p>
         <RouterLink to="/create-resume" class="btn btn-primary btn-lg">
           Start Optimising Now — It's Free
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -694,6 +710,36 @@
   line-height: 1.65;
 }
 
+/* ─── SEO Links ───────────────────────────────────────────────────────────── */
+.seo-links-section {
+  padding: 0 var(--space-6) var(--space-16);
+}
+
+.seo-links-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.seo-links-grid a {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-heading);
+  font-weight: 700;
+  min-height: 90px;
+  padding: var(--space-5);
+  text-align: center;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.seo-links-grid a:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
 /* ─── Final CTA ───────────────────────────────────────────────────────────── */
 .final-cta {
   position: relative;
@@ -798,6 +844,10 @@
     flex-direction: column;
     align-items: center;
     gap: var(--space-2);
+  }
+
+  .seo-links-grid {
+    grid-template-columns: 1fr;
   }
 }
 

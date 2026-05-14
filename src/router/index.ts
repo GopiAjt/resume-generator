@@ -1,6 +1,7 @@
 import type { Router, RouteRecordRaw } from 'vue-router'
 import { trackPageView } from '@/utils/analytics'
 import { updateSeoMeta, type SeoMeta } from '@/utils/seo'
+import { seoLandingPages } from '@/data/seoLandingPages'
 import HomeView from '../views/HomeView.vue'
 
 export const routes: RouteRecordRaw[] = [
@@ -9,9 +10,11 @@ export const routes: RouteRecordRaw[] = [
     name: 'home',
     component: HomeView,
     meta: {
-      title: 'ResumeGen - Free AI Resume Optimizer and ATS Resume Builder',
+      title: 'Resume Generator - Free AI Resume Builder and ATS Resume Maker | ResumeGen',
       description:
-        'Optimize your resume for any job description with AI. Compare ATS keyword scores, tailor bullet points, and download a polished PDF or DOC resume for free.',
+        'Use ResumeGen as a free resume builder, ATS resume maker, and AI resume generator to create professional resume templates tailored to any job description.',
+      keywords:
+        'resume generator, free resume builder, ATS resume maker, professional resume template, AI resume generator',
     },
   },
   {
@@ -19,9 +22,11 @@ export const routes: RouteRecordRaw[] = [
     name: 'about',
     component: () => import('../views/AboutView.vue'),
     meta: {
-      title: 'About ResumeGen - AI Resume Optimizer',
+      title: 'About ResumeGen - Free AI Resume Generator and ATS Resume Maker',
       description:
-        'Learn how ResumeGen helps job seekers tailor resumes to job descriptions with ATS-friendly formatting, AI keyword matching, and privacy-conscious file parsing.',
+        'Learn how ResumeGen helps job seekers create ATS-friendly resumes with a free AI resume generator, professional resume templates, and privacy-conscious file parsing.',
+      keywords:
+        'AI resume generator, ATS resume maker, professional resume template, resume generator',
     },
   },
   {
@@ -29,11 +34,23 @@ export const routes: RouteRecordRaw[] = [
     name: 'create-resume',
     component: () => import('../views/CreateResumeView.vue'),
     meta: {
-      title: 'Create a Tailored Resume - Free AI Resume Optimizer | ResumeGen',
+      title: 'Create a Resume - Free Resume Builder and ATS Resume Maker | ResumeGen',
       description:
-        'Upload your resume, paste a job description, and generate a tailored ATS-friendly resume with AI. Download your optimized resume as PDF or DOC.',
+        'Create a professional resume template with ResumeGen, a free resume builder and ATS resume maker powered by AI. Upload, tailor, and download your resume as PDF or DOC.',
+      keywords:
+        'free resume builder, ATS resume maker, AI resume generator, professional resume template, resume generator',
     },
   },
+  ...seoLandingPages.map((page) => ({
+    path: page.path,
+    name: page.path.slice(1),
+    component: () => import('../views/SeoLandingView.vue'),
+    meta: {
+      title: page.title,
+      description: page.description,
+      keywords: page.keyword,
+    },
+  })),
   {
     path: '/privacy',
     name: 'privacy',

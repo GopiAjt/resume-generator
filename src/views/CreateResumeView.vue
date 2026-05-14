@@ -315,10 +315,10 @@ const onStartOver = () => {
     </Teleport>
 
     <div class="header-section">
-      <h1 class="text-display">Optimize Your Resume</h1>
+      <h1 class="text-display">Create an ATS-Friendly Resume</h1>
       <p class="subtitle">
-        Upload your existing resume and paste a job description to get a tailored, ATS-ready version
-        in seconds.
+        Use the free resume builder to upload your existing resume, paste a job description,
+        and generate a professional resume template tailored by AI.
       </p>
     </div>
 
